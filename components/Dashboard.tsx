@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, Package, AlertTriangle, Lightbulb } from 'lucide-react';
 import { formatCurrency } from '../lib/finance';
-import { getVirtualCFOAdvice } from '../services/gemini';
 
 const MOCK_REVENUE_DATA = [
   { name: 'Jan', revenue: 12000, cogs: 7200, profit: 4800 },
@@ -20,18 +19,8 @@ const MOCK_SHRINKAGE_DATA = [
 ];
 
 const Dashboard: React.FC = () => {
-  const [advice, setAdvice] = useState<string>("Analyzing your margins...");
-  const [loadingAdvice, setLoadingAdvice] = useState(true);
-
-  useEffect(() => {
-    const fetchAdvice = async () => {
-      setLoadingAdvice(true);
-      const res = await getVirtualCFOAdvice(24500.50, 28.5, ['Ethiopia Yirgacheffe G2']);
-      setAdvice(res);
-      setLoadingAdvice(false);
-    };
-    fetchAdvice();
-  }, []);
+  const [advice, setAdvice] = useState<string>("Focus on high-margin beans and reduce overhead costs.");
+  const [loadingAdvice, setLoadingAdvice] = useState(false);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
