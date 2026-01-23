@@ -196,28 +196,28 @@ export default function InventoryPage() {
             <form onSubmit={handleAddBatch} className="space-y-4 md:space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Batch Number</label>
-                  <input required placeholder="Batch #" value={newBatch.batchNumber} onChange={e => setNewBatch({...newBatch, batchNumber: e.target.value})} className="input-field" />
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Batch Identification</label>
+                  <input required placeholder="e.g. LOT-2024-001" value={newBatch.batchNumber} onChange={e => setNewBatch({...newBatch, batchNumber: e.target.value})} className="input-field" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Origin</label>
-                  <input required placeholder="Origin" value={newBatch.origin} onChange={e => setNewBatch({...newBatch, origin: e.target.value})} className="input-field" />
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Coffee Origin / Farm</label>
+                  <input required placeholder="e.g. Colombia Huila" value={newBatch.origin} onChange={e => setNewBatch({...newBatch, origin: e.target.value})} className="input-field" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Quantity ({unit})</label>
-                  <input required type="number" step="0.01" placeholder={`Weight (${unit})`} value={newBatch.quantityInput} onChange={e => setNewBatch({...newBatch, quantityInput: e.target.value})} className="input-field" />
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Received Weight ({unit})</label>
+                  <input required type="number" step="0.01" placeholder="0.00" value={newBatch.quantityInput} onChange={e => setNewBatch({...newBatch, quantityInput: e.target.value})} className="input-field" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Green Price (per {unit})</label>
-                  <input required type="number" step="0.01" placeholder={`Cost ($/${unit})`} value={newBatch.costInput} onChange={e => setNewBatch({...newBatch, costInput: e.target.value})} className="input-field" />
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Purchase Price (per {unit})</label>
+                  <input required type="number" step="0.01" placeholder="0.00" value={newBatch.costInput} onChange={e => setNewBatch({...newBatch, costInput: e.target.value})} className="input-field" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Shipping Cost (Total)</label>
-                  <input type="number" step="0.01" placeholder="Total Shipping" value={newBatch.shippingInput} onChange={e => setNewBatch({...newBatch, shippingInput: e.target.value})} className="input-field" />
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Freight & Shipping</label>
+                  <input type="number" step="0.01" placeholder="Total Cost" value={newBatch.shippingInput} onChange={e => setNewBatch({...newBatch, shippingInput: e.target.value})} className="input-field" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tax/Customs (Total)</label>
-                  <input type="number" step="0.01" placeholder="Total Taxes" value={newBatch.taxInput} onChange={e => setNewBatch({...newBatch, taxInput: e.target.value})} className="input-field" />
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Taxes & Import Fees</label>
+                  <input type="number" step="0.01" placeholder="Total Fees" value={newBatch.taxInput} onChange={e => setNewBatch({...newBatch, taxInput: e.target.value})} className="input-field" />
                 </div>
               </div>
 

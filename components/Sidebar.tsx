@@ -19,22 +19,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       title: "Overview",
       items: [
         { href: "/dashboard", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
-      ]
-    },
-    {
-      title: "Inventory & Production",
-      items: [
-        { href: "/inventory", label: "Green Inventory", icon: <Database size={20} /> },
-        { href: "/recipes", label: "Blend Designer", icon: <BookOpen size={20} /> },
-        { href: "/roast", label: "Production Log", icon: <Flame size={20} /> },
-        { href: "/quality", label: "Quality Control", icon: <Award size={20} /> },
-      ]
-    },
-    {
-      title: "Sales & Revenue",
-      items: [
         { href: "/sales", label: "Wholesale Orders", icon: <Package size={20} /> },
         { href: "/cafe", label: "Cafe Operations", icon: <Store size={20} /> },
+      ]
+    },
+    {
+      title: "Production & Quality",
+      items: [
+        { href: "/inventory", label: "Green Inventory", icon: <Database size={20} /> },
+        { href: "/roast", label: "Production Hub", icon: <Flame size={20} /> },
+        { href: "/quality", label: "Quality Control", icon: <Award size={20} /> },
       ]
     },
   ];

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { Plus, Trash2, Coffee, DollarSign, Package, ChefHat, Info, X } from 'lucide-react';
+import { Plus, Trash2, Coffee, DollarSign, Package, ChefHat, Info, X, Calculator } from 'lucide-react';
 import { useUnits } from '../../lib/units';
 import { Card, StatCard } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
@@ -21,9 +21,22 @@ export default function CafePage() {
   const deleteMenuItem = useMutation(api.cafe.deleteMenuItem);
 
   // UI State
-  const [activeTab, setActiveTab] = useState<'menu' | 'ingredients'>('menu');
+  const [activeTab, setActiveTab] = useState<'menu' | 'ingredients' | 'overhead'>('menu');
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [isAddingIngred, setIsAddingIngred] = useState(false);
+
+  // Overhead state (local storage for MVP, integrated with ingredients for persistence)
+  const [fixedCosts, setFixedCosts] = useState([
+    { name: 'Rent & Facility', cost: 2500, period: 'month' },
+    { name: 'Utilities (Gas/Water)', cost: 450, period: 'month' },
+    { name: 'Insurance', cost: 120, period: 'month' },
+    { name: 'Software Subscriptions', cost: 85, period: 'month' },
+  ]);
+
+  const [variableCosts, setVariableCosts] = useState([
+    { name: 'Maintenance & Repairs', cost: 200, period: 'avg/mo' },
+    { name: 'Marketing & Social', cost: 150, period: 'avg/mo' },
+  ]);
 
   // Forms
   const [newIngred, setNewIngred] = useState({ name: '', category: 'milk', cost: 0, unit: 'gal', volumeOz: 128 });
@@ -95,21 +108,96 @@ export default function CafePage() {
           <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter">Cafe Profitability</h1>
           <p className="text-slate-500 font-medium text-sm md:text-base">True-cost analysis for your beverage menu.</p>
         </div>
-        <div className="flex bg-slate-100 p-1 rounded-xl w-full lg:w-auto">
+        <div className="flex bg-slate-100 p-1 rounded-xl w-full lg:w-auto overflow-x-auto no-scrollbar">
           <button 
             onClick={() => setActiveTab('menu')}
-            className={`flex-1 lg:flex-none px-4 py-2 rounded-lg text-xs md:text-sm font-bold transition-all ${activeTab === 'menu' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`flex-1 lg:flex-none px-4 py-2 rounded-lg text-xs md:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'menu' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
           >
             Menu Analysis
           </button>
           <button 
             onClick={() => setActiveTab('ingredients')}
-            className={`flex-1 lg:flex-none px-4 py-2 rounded-lg text-xs md:text-sm font-bold transition-all ${activeTab === 'ingredients' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`flex-1 lg:flex-none px-4 py-2 rounded-lg text-xs md:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'ingredients' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
           >
             Ingredients
           </button>
+          <button 
+            onClick={() => setActiveTab('overhead')}
+            className={`flex-1 lg:flex-none px-4 py-2 rounded-lg text-xs md:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'overhead' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            Shop Overhead
+          </button>
         </div>
       </div>
+
+      {activeTab === 'overhead' && (
+        <div className="max-w-4xl mx-auto space-y-8 animate-in slide-in-from-bottom-2 duration-500">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Fixed Costs */}
+            <Card title="Fixed Operating Costs" subtitle="Recurring monthly expenses">
+               <div className="space-y-4">
+                  {fixedCosts.map((cost, idx) => (
+                    <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+                       <div>
+                          <div className="font-bold text-slate-900">{cost.name}</div>
+                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{cost.period}</div>
+                       </div>
+                       <div className="text-right">
+                          <div className="font-black text-slate-900">{formatCurrency(cost.cost)}</div>
+                          <div className="text-[10px] font-bold text-slate-400 uppercase">Per Month</div>
+                       </div>
+                    </div>
+                  ))}
+                  <button className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-xs font-black text-slate-400 uppercase tracking-widest hover:border-amber-500 hover:text-amber-500 transition-all flex items-center justify-center gap-2">
+                     <Plus size={14} /> Add Fixed Cost
+                  </button>
+               </div>
+            </Card>
+
+            {/* Non-Fixed Costs */}
+            <Card title="Variable & Non-Fixed" subtitle="Estimated or project-based costs">
+               <div className="space-y-4">
+                  {variableCosts.map((cost, idx) => (
+                    <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+                       <div>
+                          <div className="font-bold text-slate-900">{cost.name}</div>
+                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{cost.period}</div>
+                       </div>
+                       <div className="text-right">
+                          <div className="font-black text-slate-900">{formatCurrency(cost.cost)}</div>
+                          <div className="text-[10px] font-bold text-slate-400 uppercase">Est. Monthly</div>
+                       </div>
+                    </div>
+                  ))}
+                  <button className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-xs font-black text-slate-400 uppercase tracking-widest hover:border-amber-500 hover:text-amber-500 transition-all flex items-center justify-center gap-2">
+                     <Plus size={14} /> Add Variable Cost
+                  </button>
+               </div>
+            </Card>
+          </div>
+
+          {/* Total Overhead Analysis */}
+          <div className="bg-slate-900 text-white p-8 rounded-[2rem] shadow-2xl relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-8 opacity-10"><Calculator size={140} /></div>
+             <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-12 items-center">
+                <div className="md:col-span-2">
+                   <span className="text-[10px] font-black text-amber-500 uppercase tracking-[0.3em]">Monthly Operating Burden</span>
+                   <div className="text-6xl font-black tracking-tighter mt-2">
+                      {formatCurrency(fixedCosts.reduce((a,b) => a+b.cost, 0) + variableCosts.reduce((a,b) => a+b.cost, 0))}
+                   </div>
+                   <p className="text-slate-400 text-sm mt-4 leading-relaxed max-w-md">
+                      This is the total amount of gross profit required from beverage sales just to break even on facility and administrative costs.
+                   </p>
+                </div>
+                <div className="bg-white/10 p-6 rounded-2xl border border-white/10 text-center">
+                   <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Target Sales</div>
+                   <div className="text-2xl font-black text-amber-400">1,240 Cups</div>
+                   <p className="text-[10px] font-bold text-slate-500 mt-2">at avg. $3.50 margin/cup</p>
+                </div>
+             </div>
+          </div>
+        </div>
+      )}
 
       {activeTab === 'menu' && (
         <div className="space-y-6 md:space-y-8">
