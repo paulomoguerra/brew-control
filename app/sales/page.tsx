@@ -6,12 +6,12 @@ import { api } from "../../convex/_generated/api";
 import { Plus, Loader2, X, PackageMinus } from 'lucide-react';
 import { useUnits } from '../../lib/units';
 import { useToast } from '../../components/ui/Toast';
-import { OrderItem } from '../../types';
 import { Card } from '../../components/ui/Card';
+import { Skeleton } from '../../components/ui/Skeleton';
 import { Id } from '../../convex/_generated/dataModel';
 
 export default function SalesPage() {
-  const { formatCurrency } = useUnits();
+  const { formatCurrency, formatWeight } = useUnits();
   const { showToast } = useToast();
   
   // Data Fetching
@@ -20,6 +20,8 @@ export default function SalesPage() {
   const addOrder = useMutation(api.orders.add);
   const addClient = useMutation(api.clients.add); 
   const updateStatus = useMutation(api.orders.updateStatus);
+
+  const isLoading = orders === undefined || products === undefined;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -46,24 +48,6 @@ export default function SalesPage() {
     if (cart.length === 0 || !clientName) return;
     setIsProcessing(true);
     try {
-      // Create a temporary client for this order (or lookup if we had a real CRM)
-      // For this MVP, we will use a "Guest Client" approach or we need to add a client first.
-      // Since `orders.add` expects a `clientId`, let's just create a dummy client in our schema?
-      // Or we can update the schema to allow string names. 
-      // Actually, my schema said `clientId: v.id("clients")`.
-      // So I MUST have a client ID.
-      // I'll assume for now we have a "Walk-In" client or I'll quickly add a `createClient` mutation on the fly?
-      // Let's create a quick "Quick Client" mutation if needed, or just fail for now?
-      // Better: I'll update the mutation in `convex/orders.ts` to accept `clientName` string for MVP if I hadn't already defined strict schema.
-      // Strict schema is defined. I'll need to create a client first.
-      
-      // Let's rely on a helper or just create one.
-      // Wait, I don't have `api.clients.add` exposed yet.
-      // I should probably fix that in the next step.
-      // For now, I'll comment out the execution and warn the user, OR I can assume a valid ID is passed if I hardcode one.
-      // Actually, I'll fix `convex/clients.ts` next.
-      
-      // I'll proceed with the code assuming `api.clients.add` exists and I'll create it in the next tool call.
       const clientId = await addClient({ name: clientName, email: "placeholder@email.com", pricingTier: "Wholesale A" });
 
       await addOrder({
@@ -83,6 +67,25 @@ export default function SalesPage() {
       setIsProcessing(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-8 space-y-8">
+        <header className="flex justify-between items-center">
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-[300px]" />
+            <Skeleton className="h-4 w-[400px]" />
+          </div>
+          <Skeleton className="h-12 w-[200px] rounded-xl" />
+        </header>
+        <Card className="min-h-[400px] p-8 space-y-4">
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 p-8">
@@ -149,7 +152,7 @@ export default function SalesPage() {
               <div className="grid grid-cols-4 gap-4 items-end">
                 <select value={selectedProductId} onChange={e => setSelectedProductId(e.target.value)} className="col-span-2 input-field">
                   <option value="">Select Product...</option>
-                  {products?.map(p => <option key={p._id} value={p._id}>{p.productName} ({p.quantityLbs} lbs)</option>)}
+                  {products?.map(p => <option key={p._id} value={p._id}>{p.productName} ({formatWeight(p.quantityLbs)})</option>)}
                 </select>
                 <input type="number" value={quantity || ''} onChange={e => setQuantity(Number(e.target.value))} placeholder="Qty" className="input-field" />
                 <button onClick={addToCart} className="btn-secondary h-[48px]">Add</button>

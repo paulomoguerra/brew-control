@@ -7,6 +7,7 @@ import { Plus, Loader2, Save, Trash2 } from 'lucide-react';
 import { useUnits } from '../../lib/units';
 import { useToast } from '../../components/ui/Toast';
 import { Card } from '../../components/ui/Card';
+import { Skeleton } from '../../components/ui/Skeleton';
 import { ResponsiveContainer, PieChart as RePie, Pie, Cell, Tooltip } from 'recharts';
 import { Id } from '../../convex/_generated/dataModel';
 
@@ -28,6 +29,7 @@ export default function RecipesPage() {
   // Form State
   const [isCreating, setIsCreating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const isLoading = inventory === undefined || recipes === undefined;
   const [name, setName] = useState('');
   const [targetShrinkage, setTargetShrinkage] = useState(15.0);
   const [components, setComponents] = useState<RecipeComponent[]>([{ greenBatchId: '' as Id<"greenInventory">, percentage: 100 }]);
@@ -149,7 +151,26 @@ export default function RecipesPage() {
                     <div className="space-y-2">
                        {recipe.components.map((comp, idx) => {
                          const batch = inventory.find(b => b._id === comp.greenBatchId);
-                         return (
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto p-8 space-y-8">
+        <header className="flex justify-between items-center">
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-[300px]" />
+            <Skeleton className="h-4 w-[400px]" />
+          </div>
+          <Skeleton className="h-12 w-[150px] rounded-xl" />
+        </header>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Skeleton className="h-48 rounded-2xl" />
+          <Skeleton className="h-48 rounded-2xl" />
+          <Skeleton className="h-48 rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
                            <div key={idx} className="flex justify-between text-xs">
                               <span className="font-medium text-slate-600">{batch?.origin || 'Unknown'}</span>
                               <span className="font-bold text-slate-900">{comp.percentage}%</span>

@@ -29,13 +29,13 @@ const UnitContext = createContext<UnitContextType | undefined>(undefined);
 
 export function UnitProvider({ children }: { children: React.ReactNode }) {
   const [unit, setUnit] = useState<Unit>('kg');
-  const [currency, setCurrency] = useState<Currency>('USD');
+  const [currency, setCurrency] = useState<Currency>('BRL');
 
   useEffect(() => {
-    const savedUnit = localStorage.getItem('roasteros-unit') as Unit;
-    const savedCurrency = localStorage.getItem('roasteros-currency') as Currency;
-    if (savedUnit) setUnit(savedUnit);
-    if (savedCurrency) setCurrency(savedCurrency);
+    const savedUnit = localStorage.getItem('roasteros-unit') as Unit || 'kg';
+    const savedCurrency = localStorage.getItem('roasteros-currency') as Currency || 'BRL';
+    setUnit(savedUnit);
+    setCurrency(savedCurrency);
   }, []);
 
   const toggleUnit = () => {
@@ -54,16 +54,19 @@ export function UnitProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const LBS_TO_KG = 0.45359237;
+  const KG_TO_LBS = 2.20462262;
+
   const toDisplayWeight = (lbs: number) => {
-    return unit === 'lbs' ? lbs : lbs * 0.453592;
+    return unit === 'lbs' ? lbs : lbs * LBS_TO_KG;
   };
 
   const toStorageWeight = (input: number) => {
-    return unit === 'lbs' ? input : input * 2.20462;
+    return unit === 'lbs' ? input : input * KG_TO_LBS;
   };
 
   const toDisplayPrice = (pricePerLb: number) => {
-    return unit === 'lbs' ? pricePerLb : pricePerLb * 2.20462;
+    return unit === 'lbs' ? pricePerLb : pricePerLb * KG_TO_LBS;
   };
 
   const formatCurrency = (value: number) => {
@@ -76,7 +79,7 @@ export function UnitProvider({ children }: { children: React.ReactNode }) {
 
   const formatWeight = (lbs: number) => {
     const val = toDisplayWeight(lbs);
-    return `${val.toLocaleString(undefined, { maximumFractionDigits: 1 })} ${unit}`;
+    return `${val.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${unit}`;
   };
 
   const formatPrice = (pricePerLb: number) => {

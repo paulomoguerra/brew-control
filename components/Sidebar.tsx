@@ -58,12 +58,15 @@ export default function Sidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold w-full text-left ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold w-full text-left group relative ${
                     isActive(item.href)
                       ? "bg-amber-500 text-slate-900 shadow-lg shadow-amber-500/20"
                       : "text-slate-400 hover:bg-slate-800 hover:text-white"
                   }`}
                 >
+                  {isActive(item.href) && (
+                    <div className="absolute left-0 w-1 h-6 bg-slate-900 rounded-r-full" />
+                  )}
                   {item.icon}
                   {item.label}
                 </Link>

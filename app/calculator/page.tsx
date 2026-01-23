@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useState } from 'react';
-import { db } from '../../lib/firebase';
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { DollarSign, Percent, Truck, Mail, Calculator, TrendingUp, AlertCircle } from 'lucide-react';
 import { useUnits } from '../../lib/units';
 
@@ -24,8 +22,9 @@ export default function CalculatorPage() {
     e.preventDefault();
     setIsCalculating(true);
 
-    // Formula remains same regardless of unit, as long as Green Cost and Shipping are same unit basis
-    // RoastedCost = (GreenCost + Shipping) / (1 - (Shrinkage / 100))
+    // Mock delay for "Crunching Numbers" effect
+    await new Promise(resolve => setTimeout(resolve, 600));
+
     const shrinkageFactor = 1 - (inputs.shrinkage / 100);
     const roastedCost = shrinkageFactor > 0 
       ? (inputs.greenCost + inputs.shipping) / shrinkageFactor 
@@ -33,21 +32,7 @@ export default function CalculatorPage() {
 
     setResult(roastedCost);
     setShowResult(true);
-
-    try {
-      // Capture lead data
-      await addDoc(collection(db, "calculator_leads"), {
-        ...inputs,
-        calculatedRoastedCost: roastedCost,
-        unit_preference: unit,
-        timestamp: serverTimestamp(),
-        source: 'app_calculator'
-      });
-    } catch (error) {
-      console.error("Error saving lead:", error);
-    } finally {
-      setIsCalculating(false);
-    }
+    setIsCalculating(false);
   };
 
   const isCostHigher = result !== null && result > inputs.greenCost;
@@ -120,22 +105,6 @@ export default function CalculatorPage() {
                     required
                     value={inputs.shipping}
                     onChange={(e) => setInputs({ ...inputs, shipping: parseFloat(e.target.value) || 0 })}
-                    className="input-field pl-12"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2 pt-4 border-t border-slate-100">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email (Optional Report)</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400">
-                    <Mail size={16} />
-                  </div>
-                  <input
-                    type="email"
-                    placeholder="roaster@example.com"
-                    value={inputs.email}
-                    onChange={(e) => setInputs({ ...inputs, email: e.target.value })}
                     className="input-field pl-12"
                   />
                 </div>

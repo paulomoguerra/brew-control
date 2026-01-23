@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { db } from '../../lib/firebase';
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { Save, Loader2, DollarSign, Zap, Flame, Users, Info } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
+import { useToast } from '../../components/ui/Toast';
 
 export default function SettingsPage() {
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [config, setConfig] = useState({
@@ -16,40 +16,25 @@ export default function SettingsPage() {
   });
 
   useEffect(() => {
-    const fetchConfig = async () => {
+    const saved = localStorage.getItem('roasteros-config');
+    if (saved) {
       try {
-        const docRef = doc(db, "system_settings", "financials");
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setConfig({
-            laborRate: data.laborRate || 25.00,
-            gasRate: data.gasRate || 4.50,
-            utilityRate: data.utilityRate || 1.50
-          });
-        }
-      } catch (err) {
-        console.error("Error loading settings:", err);
-      } finally {
-        setLoading(false);
+        setConfig(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse config", e);
       }
-    };
-    fetchConfig();
+    }
+    setLoading(false);
   }, []);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    try {
-      await setDoc(doc(db, "system_settings", "financials"), {
-        ...config,
-        updatedAt: serverTimestamp()
-      });
-    } catch (err) {
-      console.error("Error saving settings:", err);
-    } finally {
-      setSaving(false);
-    }
+    // Mock delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+    localStorage.setItem('roasteros-config', JSON.stringify(config));
+    showToast('Operational rates saved locally', 'success');
+    setSaving(false);
   };
 
   if (loading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-slate-400" /></div>;
@@ -75,7 +60,7 @@ export default function SettingsPage() {
                  <input 
                    type="number" step="0.50" required 
                    value={config.laborRate}
-                   onChange={e => setConfig({...config, laborRate: parseFloat(e.target.value)})}
+                   onChange={e => setConfig({...config, laborRate: parseFloat(e.target.value) || 0})}
                    className="input-field pl-8"
                  />
               </div>
@@ -92,7 +77,7 @@ export default function SettingsPage() {
                  <input 
                    type="number" step="0.10" required 
                    value={config.gasRate}
-                   onChange={e => setConfig({...config, gasRate: parseFloat(e.target.value)})}
+                   onChange={e => setConfig({...config, gasRate: parseFloat(e.target.value) || 0})}
                    className="input-field pl-8"
                  />
               </div>
@@ -109,7 +94,7 @@ export default function SettingsPage() {
                  <input 
                    type="number" step="0.10" required 
                    value={config.utilityRate}
-                   onChange={e => setConfig({...config, utilityRate: parseFloat(e.target.value)})}
+                   onChange={e => setConfig({...config, utilityRate: parseFloat(e.target.value) || 0})}
                    className="input-field pl-8"
                  />
               </div>

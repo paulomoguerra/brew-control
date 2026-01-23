@@ -7,9 +7,10 @@ import { DollarSign, Package, AlertTriangle, TrendingUp, Lightbulb } from "lucid
 import { useUnits } from "../../lib/units";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { StatCard, Card } from "../../components/ui/Card";
+import { Skeleton } from "../../components/ui/Skeleton";
 
 export default function DashboardPage() {
-  const { formatCurrency } = useUnits();
+  const { formatCurrency, formatWeight } = useUnits();
   
   // Real-time data from Convex
   const inventory = useQuery(api.inventory.list);
@@ -23,6 +24,7 @@ export default function DashboardPage() {
     const totalInventoryValue = inventory.reduce((acc, curr) => acc + (curr.quantityLbs * curr.costPerLb), 0);
     const lowStockCount = inventory.filter(i => i.quantityLbs < 10).length;
     const totalRevenue = orders.reduce((acc, curr) => acc + (curr.totalAmount || 0), 0);
+    const totalWeight = inventory.reduce((acc, curr) => acc + curr.quantityLbs, 0);
     
     // Calculate actual roast margins from roast logs
     // Margin = ((Wholesale Price - True Cost) / Wholesale Price) * 100
@@ -37,7 +39,7 @@ export default function DashboardPage() {
       ? roastsWithMargins.reduce((a, b) => a + b, 0) / roastsWithMargins.length 
       : 0;
     
-    return { totalInventoryValue, lowStockCount, totalRevenue, avgRoastMargin };
+    return { totalInventoryValue, lowStockCount, totalRevenue, avgRoastMargin, totalWeight };
   }, [inventory, orders, roasts]);
 
   // Burn Down Analysis
@@ -81,22 +83,23 @@ export default function DashboardPage() {
   const isLoading = inventory === undefined || orders === undefined || roasts === undefined;
 
   if (isLoading) {
-      return (
-        <div className="p-8 space-y-4 text-center">
-          <div className="text-slate-400 font-bold animate-pulse text-xl">Loading Executive Dashboard...</div>
-          <div className="flex flex-col gap-2 items-center text-xs font-mono text-slate-500">
-            <div className={inventory === undefined ? "animate-pulse" : "text-green-500"}>
-              Inventory: {inventory === undefined ? "⌛" : "✅"}
-            </div>
-            <div className={orders === undefined ? "animate-pulse" : "text-green-500"}>
-              Orders: {orders === undefined ? "⌛" : "✅"}
-            </div>
-            <div className={roasts === undefined ? "animate-pulse" : "text-green-500"}>
-              Roast Logs: {roasts === undefined ? "⌛" : "✅"}
-            </div>
-          </div>
+    return (
+      <div className="p-8 space-y-8">
+        <header className="space-y-2">
+          <Skeleton className="h-10 w-[300px]" />
+          <Skeleton className="h-4 w-[400px]" />
+        </header>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-32 w-full rounded-[2rem]" />
+          ))}
         </div>
-      );
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          <Skeleton className="xl:col-span-2 h-[400px] rounded-[2rem]" />
+          <Skeleton className="xl:col-span-1 h-[400px] rounded-[2rem]" />
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -108,7 +111,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard label="Total Revenue" value={formatCurrency(metrics.totalRevenue)} icon={<DollarSign className="text-green-600" />} trend="Gross Sales" />
-        <StatCard label="Inventory Assets" value={formatCurrency(metrics.totalInventoryValue)} icon={<Package className="text-blue-600" />} trend="Live Valuation" />
+        <StatCard label="Inventory Assets" value={formatCurrency(metrics.totalInventoryValue)} icon={<Package className="text-blue-600" />} trend={formatWeight(metrics.totalWeight)} />
         <StatCard 
           label="Avg. Roast Margin" 
           value={metrics.avgRoastMargin > 0 ? `${metrics.avgRoastMargin.toFixed(1)}%` : "N/A"} 

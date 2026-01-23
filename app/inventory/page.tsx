@@ -7,6 +7,7 @@ import { Plus, Loader2, Package, AlertTriangle, DollarSign } from 'lucide-react'
 import { useUnits } from '../../lib/units';
 import { useToast } from '../../components/ui/Toast';
 import { Card, StatCard } from '../../components/ui/Card';
+import { Skeleton } from '../../components/ui/Skeleton';
 
 export default function InventoryPage() {
   const { unit, toStorageWeight, toDisplayWeight, toDisplayPrice, formatWeight, formatPrice, formatCurrency } = useUnits();
@@ -132,9 +133,9 @@ export default function InventoryPage() {
 
       <Card className="min-h-[400px]">
         {inventory === undefined ? (
-          <div className="flex flex-col items-center justify-center h-64 text-slate-400 gap-4">
-            <Loader2 className="animate-spin" size={40} />
-            <span className="font-bold uppercase tracking-widest text-xs">Syncing Ledger...</span>
+          <div className="p-8 space-y-4">
+            <Skeleton className="h-8 w-[200px]" />
+            <Skeleton className="h-[300px] w-full" />
           </div>
         ) : inventory.length > 0 ? (
           <div className="overflow-x-auto">

@@ -5,18 +5,23 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Flame, Loader2, CheckCircle2, BarChart3, AlertCircle, Clock, Coins, X } from 'lucide-react';
 import { useUnits } from '../../lib/units';
+import { useToast } from '../../components/ui/Toast';
 import { Card } from '../../components/ui/Card';
+import { Skeleton } from '../../components/ui/Skeleton';
+import { calculateRoastEconomics } from '../../lib/finance';
 
 export default function RoastProductionPage() {
   const { unit, toStorageWeight, formatWeight, formatPrice, formatCurrency } = useUnits();
+  const { showToast } = useToast();
   
   // Data Fetching
   const batches = useQuery(api.inventory.list);
   const recentLogs = useQuery(api.roasts.listLogs);
   const logRoast = useMutation(api.roasts.logRoast);
 
+  const isLoading = batches === undefined || recentLogs === undefined;
+
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [selectedLog, setSelectedLog] = useState<any>(null); // State for modal view
   
   // Form Inputs
@@ -47,24 +52,23 @@ export default function RoastProductionPage() {
     const greenInLbs = toStorageWeight(greenInVal);
     const roastedOutLbs = toStorageWeight(roastedOutVal);
     
-    // 1. Shrinkage
-    const shrinkage = ((greenInLbs - roastedOutLbs) / greenInLbs) * 100;
-    
-    // 2. Green Cost
-    const totalGreenCost = greenInLbs * selectedBatch.costPerLb;
-    
-    // 3. Operational Overhead
-    // Rate ($/hr) * (Duration / 60)
     const hourlyRate = (financials.laborRate || 0) + (financials.gasRate || 0) + (financials.utilityRate || 0);
     const overheadCost = hourlyRate * (duration / 60);
-    
-    // 4. Total Batch Cost
-    const totalBatchCost = totalGreenCost + overheadCost;
-    
-    // 5. Unit Cost
-    const roastedCostPerLb = totalBatchCost / roastedOutLbs; 
 
-    return { shrinkage, roastedCostPerLb, totalGreenCost, overheadCost, totalBatchCost };
+    const result = calculateRoastEconomics(
+      greenInLbs,
+      roastedOutLbs,
+      selectedBatch.costPerLb,
+      overheadCost
+    );
+
+    return {
+      shrinkage: ( (greenInLbs - roastedOutLbs) / greenInLbs ) * 100,
+      roastedCostPerLb: result.costPerRoastedLb,
+      totalGreenCost: result.greenCost,
+      overheadCost: result.totalCost - result.greenCost,
+      totalBatchCost: result.totalCost
+    };
   }, [selectedBatch, greenWeightIn, roastedWeightOut, duration, financials, toStorageWeight]);
 
   const handleSubmitRoast = async (e: React.FormEvent) => {
@@ -87,20 +91,34 @@ export default function RoastProductionPage() {
         gasCostPerBatch: (financials.gasRate * (duration/60))
       });
 
-      setSuccess(true);
-      setTimeout(() => {
-        setSuccess(false);
+        showToast('Roast logged successfully', 'success');
         setGreenWeightIn('');
         setRoastedWeightOut('');
         setProductName('');
         setDuration(12);
-      }, 2000);
     } catch (err) {
       console.error("Roast Transaction failed:", err);
+      showToast('Failed to log roast', 'error');
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto p-8 space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-8">
+            <Skeleton className="h-[400px] rounded-[2rem]" />
+            <Skeleton className="h-[400px] rounded-[2rem]" />
+          </div>
+          <div className="lg:col-span-1">
+            <Skeleton className="h-[500px] rounded-[2rem]" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700 p-8">
@@ -133,9 +151,9 @@ export default function RoastProductionPage() {
                 <input type="number" required placeholder={`Green In (${unit})`} value={greenWeightIn} onChange={e => setGreenWeightIn(e.target.value)} className="input-field" />
                 <input type="number" required placeholder={`Roasted Out (${unit})`} value={roastedWeightOut} onChange={e => setRoastedWeightOut(e.target.value)} className="input-field" />
               </div>
-              <button type="submit" disabled={isSubmitting || !economics} className={`btn-primary w-full ${success ? 'bg-green-500' : ''}`}>
-                {isSubmitting ? <Loader2 className="animate-spin" /> : success ? <CheckCircle2 /> : <Flame />}
-                {isSubmitting ? "Finalizing..." : success ? "Roast Logged" : "Submit Production Roast"}
+              <button type="submit" disabled={isSubmitting || !economics} className="btn-primary w-full">
+                {isSubmitting ? <Loader2 className="animate-spin" /> : <Flame />}
+                {isSubmitting ? "Finalizing..." : "Submit Production Roast"}
               </button>
             </form>
           </Card>

@@ -25,6 +25,10 @@ export const logRoast = mutation({
     if (!batch) throw new Error("Batch not found");
 
     // 2. Calculate Economics
+    if (args.greenWeightIn <= 0) throw new Error("Green weight must be positive");
+    if (args.roastedWeightOut <= 0) throw new Error("Roasted weight must be positive");
+    if (args.roastedWeightOut > args.greenWeightIn) throw new Error("Roasted weight cannot exceed green weight");
+
     const greenCost = batch.costPerLb * args.greenWeightIn;
     const overhead = (args.laborRate * (args.durationMinutes / 60)) + args.gasCostPerBatch;
     const totalCost = greenCost + overhead;
@@ -45,8 +49,12 @@ export const logRoast = mutation({
     });
 
     // 4. Deduct Green Inventory
+    const newQuantity = batch.quantityLbs - args.greenWeightIn;
+    if (newQuantity < 0) throw new Error("Insufficient green inventory");
+
     await ctx.db.patch(args.batchId, {
-      quantityLbs: batch.quantityLbs - args.greenWeightIn,
+      quantityLbs: newQuantity,
+      status: newQuantity <= 0 ? "archived" : "active"
     });
 
     // 5. Add to Roasted Inventory
