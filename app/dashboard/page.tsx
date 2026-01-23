@@ -27,10 +27,10 @@ export default function DashboardPage() {
 
     const totalInventoryValue = inventory.reduce((acc, curr) => acc + (curr.quantityLbs * curr.costPerLb), 0);
     const lowStockCount = inventory.filter(i => i.quantityLbs < 10).length;
-    const totalRevenue = orders.reduce((acc, curr) => acc + (curr.totalAmount || 0), 0);
+    const totalRevenue = (orders as any[]).reduce((acc, curr) => acc + (curr.totalAmount || 0), 0);
     const totalWeight = inventory.reduce((acc, curr) => acc + curr.quantityLbs, 0);
     
-    const roastsWithMargins = roasts.filter(r => r.trueCostPerLb > 0).map(r => {
+    const roastsWithMargins = (roasts as any[]).filter(r => r.trueCostPerLb > 0).map(r => {
       // For dashboard we use a standard 50% retail margin estimate if wholesale not provided
       const estSalePrice = r.trueCostPerLb * 2; 
       return ((estSalePrice - r.trueCostPerLb) / estSalePrice) * 100;
@@ -70,7 +70,7 @@ export default function DashboardPage() {
     if (!orders) return [];
     const monthlyData: Record<string, number> = {};
     
-    orders.forEach(order => {
+    (orders as any[]).forEach(order => {
       if (order.orderDate) {
         const date = new Date(order.orderDate);
         const month = date.toLocaleString('default', { month: 'short' });
@@ -106,7 +106,7 @@ export default function DashboardPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {orders?.slice(0, 10).map((o, i) => (
+            {(orders as any[])?.slice(0, 10).map((o, i) => (
               <tr key={i} className="hover:bg-slate-50/50">
                 <td className="px-6 py-4 font-bold text-slate-900">{o.clientName || "Direct Sale"}</td>
                 <td className="px-6 py-4 text-slate-500">{new Date(o.orderDate).toLocaleDateString()}</td>

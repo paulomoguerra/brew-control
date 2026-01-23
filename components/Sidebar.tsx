@@ -19,8 +19,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       title: "Overview",
       items: [
         { href: "/dashboard", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
-        { href: "/sales", label: "Wholesale Orders", icon: <Package size={20} /> },
         { href: "/cafe", label: "Cafe Operations", icon: <Store size={20} /> },
+        { href: "/sales", label: "Wholesale Orders", icon: <Package size={20} /> },
       ]
     },
     {

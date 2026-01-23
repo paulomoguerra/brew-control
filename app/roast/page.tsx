@@ -98,9 +98,9 @@ export default function ProductionHub() {
       };
     } else {
       if (!selectedRecipe) return null;
-      const greenRequiredDisplay = goalVal / (1 - (selectedRecipe.targetShrinkage / 100));
+      const greenRequiredDisplay = goalVal / (1 - ( (selectedRecipe as any).targetShrinkage / 100));
       
-      const componentRequirements = selectedRecipe.components.map(comp => {
+      const componentRequirements = (selectedRecipe as any).components.map((comp: any) => {
         const batch = batches?.find(b => b._id === comp.greenBatchId);
         const requiredWeight = greenRequiredDisplay * (comp.percentage / 100);
         const requiredLbs = toStorageWeight(requiredWeight);
@@ -112,8 +112,8 @@ export default function ProductionHub() {
         };
       });
 
-      const isPossible = componentRequirements.every(c => c.isPossible);
-      const totalCost = componentRequirements.reduce((acc, c) => acc + c.cost, 0);
+      const isPossible = componentRequirements.every((c: any) => c.isPossible);
+      const totalCost = componentRequirements.reduce((acc: number, c: any) => acc + c.cost, 0);
 
       return { 
         type: 'blend' as const, 
@@ -319,7 +319,7 @@ export default function ProductionHub() {
                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Select Blend Recipe</label>
                        <select value={selectedRecipeId} onChange={e => setSelectedRecipeId(e.target.value)} className="input-field bg-white">
                           <option value="">Select Recipe...</option>
-                          {recipes?.map(r => (
+                          {recipes?.map((r: any) => (
                             <option key={r._id} value={r._id}>{r.name}</option>
                           ))}
                        </select>

@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 
 export const add = mutation({
   args: {
@@ -8,6 +8,12 @@ export const add = mutation({
     pricingTier: v.string(),
   },
   handler: async (ctx, args) => {
-    return await ctx.db.insert("clients", args);
+    return await (ctx.db as any).insert("clients", args);
+  },
+});
+
+export const list = query({
+  handler: async (ctx) => {
+    return await (ctx.db as any).query("clients").collect();
   },
 });

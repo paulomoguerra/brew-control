@@ -85,7 +85,7 @@ export default function QualityPage() {
   };
 
   // Chart Data
-  const scatterData = sessions?.map(s => ({
+  const scatterData = (sessions as any[])?.map(s => ({
     x: s.roastInfo?.trueCostPerLb || 0,
     y: s.score,
     z: 1,

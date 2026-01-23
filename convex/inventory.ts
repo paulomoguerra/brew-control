@@ -4,7 +4,7 @@ import { mutation, query } from "./_generated/server";
 // Green Inventory
 export const list = query({
   handler: async (ctx) => {
-    return await ctx.db.query("greenInventory")
+    return await (ctx.db as any).query("greenInventory")
       .withIndex("by_quantity")
       .order("desc")
       .collect();
@@ -18,9 +18,11 @@ export const add = mutation({
     process: v.optional(v.string()),
     quantityLbs: v.number(),
     costPerLb: v.number(),
+    shippingCost: v.optional(v.number()),
+    taxCost: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await ctx.db.insert("greenInventory", {
+    await (ctx.db as any).insert("greenInventory", {
       ...args,
       initialQuantityLbs: args.quantityLbs,
       arrivedAt: Date.now(),
@@ -32,7 +34,10 @@ export const add = mutation({
 export const updateQuantity = mutation({
   args: { id: v.id("greenInventory"), newQuantity: v.number() },
   handler: async (ctx, args) => {
-    await ctx.db.patch(args.id, { quantityLbs: args.newQuantity });
+    await (ctx.db as any).patch(args.id, { 
+      quantityLbs: args.newQuantity,
+      status: args.newQuantity <= 0 ? "archived" : "active"
+    });
   },
 });
 
@@ -44,19 +49,28 @@ export const edit = mutation({
     process: v.optional(v.string()),
     quantityLbs: v.optional(v.number()),
     costPerLb: v.optional(v.number()),
+    shippingCost: v.optional(v.number()),
+    taxCost: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
-    await ctx.db.patch(id, updates);
+    await (ctx.db as any).patch(id, updates);
   },
+});
+
+export const updateRoastedMargin = mutation({
+  args: { id: v.id("roastedInventory"), targetMargin: v.number() },
+  handler: async (ctx, args) => {
+    await (ctx.db as any).patch(args.id, { targetMargin: args.targetMargin });
+  }
 });
 
 // Roasted Inventory (Finished Goods)
 export const listRoasted = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query("roastedInventory")
-      .filter((q) => q.neq(q.field("status"), "out_of_stock"))
+    return await (ctx.db as any).query("roastedInventory")
+      .filter((q: any) => q.neq(q.field("status"), "out_of_stock"))
       .collect();
   },
 });

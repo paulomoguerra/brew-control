@@ -31,7 +31,7 @@ export default function SalesPage() {
   const [quantity, setQuantity] = useState<number>(0);
 
   const addToCart = () => {
-    const product = products?.find(p => p._id === selectedProductId);
+    const product = (products as any[])?.find(p => p._id === selectedProductId);
     if (!product || quantity <= 0) return;
     
     setCart([...cart, { 
@@ -51,7 +51,7 @@ export default function SalesPage() {
       const clientId = await addClient({ name: clientName, email: "placeholder@email.com", pricingTier: "Wholesale A" });
 
       await addOrder({
-          clientId: clientId,
+          clientId: clientId as any,
           items: cart.map(i => ({ productId: i.productId, quantity: i.quantity, price: i.price })),
           totalAmount: cart.reduce((acc, i) => acc + (i.quantity * i.price), 0)
       });
@@ -111,7 +111,7 @@ export default function SalesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {orders.map((order) => (
+                {(orders as any[]).map((order) => (
                    <tr key={order._id} className="hover:bg-slate-50 text-sm md:text-base">
                      <td className="px-6 md:px-8 py-6 font-bold text-slate-900">
                         {order.clientName}
@@ -119,7 +119,7 @@ export default function SalesPage() {
                     <td className="px-6 md:px-8 py-6 text-center">
                       <select 
                         value={order.status} 
-                        onChange={(e) => updateStatus({ orderId: order._id, status: e.target.value as any })}
+                        onChange={(e) => updateStatus({ orderId: order._id as any, status: e.target.value as any })}
                         className="px-3 py-1 bg-amber-100 text-amber-900 rounded-full text-[10px] font-black uppercase border-none focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer"
                       >
                         <option value="pending">Pending</option>
@@ -162,7 +162,7 @@ export default function SalesPage() {
                     <span className="text-[9px] font-bold text-slate-400 uppercase ml-1">Product</span>
                     <select value={selectedProductId} onChange={e => setSelectedProductId(e.target.value)} className="input-field bg-white">
                       <option value="">Select Product...</option>
-                      {products?.map(p => <option key={p._id} value={p._id}>{p.productName} ({formatWeight(p.quantityLbs)})</option>)}
+                      {(products as any[])?.map(p => <option key={p._id} value={p._id}>{p.productName} ({formatWeight(p.quantityLbs)})</option>)}
                     </select>
                   </div>
                   <div className="space-y-1">
