@@ -17,12 +17,12 @@ export default function CafePage() {
   const { showToast } = useToast();
   
   // --- DATA ---
-  const summary = useQuery(api.cafe.getFinancialSummary) as any;
-  const settings = useQuery(api.cafe.getSettings) as any;
-  const expenses = useQuery(api.cafe.listExpenses) as any;
-  const ingredients = useQuery(api.cafe.listIngredients) as any;
-  const menuItems = useQuery(api.cafe.listMenuItems) as any;
-  const roastedStock = useQuery(api.inventory.listRoasted) as any;
+  const summary = useQuery(api.cafe.getFinancialSummary);
+  const settings = useQuery(api.cafe.getSettings);
+  const expenses = useQuery(api.cafe.listExpenses);
+  const ingredients = useQuery(api.cafe.listIngredients);
+  const menuItems = useQuery(api.cafe.listMenuItems);
+  const roastedStock = useQuery(api.inventory.listRoasted);
 
   const addIncome = useMutation(api.cafe.addDailyIncome);
   const updateSettings = useMutation(api.cafe.updateSettings);
@@ -40,17 +40,17 @@ export default function CafePage() {
 
   // --- CALCULATIONS ---
   const netProfit = (summary?.totalIncome || 0) - (summary?.monthlyOverhead || 0);
-  const goalProgress = summary ? (summary.totalIncome / summary.revenueGoal) * 100 : 0;
+  const goalProgress = (summary && summary.revenueGoal > 0) ? (summary.totalIncome / summary.revenueGoal) * 100 : 0;
 
-  // Contribution Data (Winner/Loser)
+  // Contribution Data
   const contributionData = useMemo(() => {
     if (!menuItems) return [];
-    return (menuItems as any[]).map(i => ({
+    return menuItems.map((i: any) => ({
       name: i.name,
       margin: i.analysis.margin,
       pct: i.analysis.marginPercent,
       contribution: i.analysis.margin * 100 
-    })).sort((a,b) => b.margin - a.margin);
+    })).sort((a: any, b: any) => b.margin - a.margin);
   }, [menuItems]);
 
   // --- HANDLERS ---
@@ -126,6 +126,7 @@ export default function CafePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
          <div className="lg:col-span-2 space-y-8">
+            {/* Coffee Portfolio Manager */}
             <Card title="Coffee Portfolio" subtitle="Manage specific margins for your beans">
                <div className="overflow-x-auto -mx-6 md:mx-0">
                   <table className="w-full text-left min-w-[500px]">
@@ -138,7 +139,7 @@ export default function CafePage() {
                         </tr>
                      </thead>
                      <tbody className="divide-y divide-slate-50">
-                        {(roastedStock as any[])?.filter(b => b.quantityLbs > 0).map(bean => {
+                        {roastedStock?.filter((b: any) => b.quantityLbs > 0).map((bean: any) => {
                            const currentMargin = bean.targetMargin || settings?.defaultTargetMargin || 75;
                            const targetPrice = bean.costPerLb / (1 - (currentMargin / 100));
                            return (
@@ -253,7 +254,7 @@ export default function CafePage() {
               <div className="space-y-8 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
                  {activeMetric === 'expenses' && (
                     <div className="space-y-4">
-                       {expenses?.map(e => (
+                       {expenses?.map((e: any) => (
                          <div key={e._id} className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl">
                             <div>
                                <div className="font-bold text-slate-900">{e.name}</div>

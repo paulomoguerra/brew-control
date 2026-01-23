@@ -3,14 +3,12 @@ import { mutation, query } from "./_generated/server";
 
 export const listSessions = query({
   handler: async (ctx) => {
-    // We could join with roastLogs here to get the bean name
-    const sessions = await (ctx.db as any).query("cuppingSessions").order("desc").collect();
+    const sessions = await ctx.db.query("cuppingSessions").order("desc").collect();
     
-    // Manual join to get Roast Info
-    const enrichedSessions = await Promise.all(sessions.map(async (session: any) => {
+    const enrichedSessions = await Promise.all(sessions.map(async (session) => {
       let roastInfo = null;
       if (session.roastLogId) {
-        roastInfo = await (ctx.db as any).get(session.roastLogId);
+        roastInfo = await ctx.db.get(session.roastLogId);
       }
       return { ...session, roastInfo };
     }));
@@ -37,7 +35,7 @@ export const logSession = mutation({
     defects: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await (ctx.db as any).insert("cuppingSessions", {
+    await ctx.db.insert("cuppingSessions", {
       ...args,
       sessionDate: Date.now(),
     });
@@ -47,6 +45,6 @@ export const logSession = mutation({
 export const deleteSession = mutation({
   args: { id: v.id("cuppingSessions") },
   handler: async (ctx, args) => {
-    await (ctx.db as any).delete(args.id);
+    await ctx.db.delete(args.id);
   },
 });

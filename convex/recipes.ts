@@ -3,9 +3,9 @@ import { query, mutation } from "./_generated/server";
 
 export const list = query({
   handler: async (ctx) => {
-    return await (ctx.db as any)
+    return await ctx.db
       .query("recipes")
-      .withIndex("by_date", (q: any) => q)
+      .withIndex("by_date", (q) => q)
       .order("desc")
       .collect();
   },
@@ -22,7 +22,7 @@ export const add = mutation({
     projectedCostPerLb: v.number(),
   },
   handler: async (ctx, args) => {
-    return await (ctx.db as any).insert("recipes", {
+    return await ctx.db.insert("recipes", {
       ...args,
       createdAt: Date.now(),
     });
@@ -32,6 +32,6 @@ export const add = mutation({
 export const remove = mutation({
   args: { recipeId: v.id("recipes") },
   handler: async (ctx, args) => {
-    await (ctx.db as any).delete(args.recipeId);
+    await ctx.db.delete(args.recipeId);
   },
 });

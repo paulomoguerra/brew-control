@@ -54,6 +54,86 @@ export default defineSchema({
     status: v.union(v.literal("available"), v.literal("low_stock"), v.literal("out_of_stock")),
   }),
 
+  // 5. Clients (The CRM)
+  clients: defineTable({
+    name: v.string(),
+    email: v.string(),
+    pricingTier: v.string(), // "Wholesale A", "Distributor", "Retail"
+    address: v.optional(v.string()),
+  }),
+
+  // 6. Wholesale Orders (The Revenue)
+  orders: defineTable({
+    clientId: v.id("clients"),
+    clientName: v.optional(v.string()),
+    status: v.union(v.literal("pending"), v.literal("roasting"), v.literal("shipped"), v.literal("paid")),
+    totalAmount: v.number(),
+    orderDate: v.number(),
+    itemCount: v.number(),
+  }).index("by_date", ["orderDate"]),
+
+  // 7. Order Items (Line Items)
+  orderItems: defineTable({
+    orderId: v.id("orders"),
+    productId: v.id("roastedInventory"),
+    quantity: v.number(),
+    priceAtTime: v.number(),
+  }),
+
+  // 8. Cafe Ingredients (Non-Coffee Costs)
+  ingredients: defineTable({
+    name: v.string(), 
+    category: v.union(v.literal("milk"), v.literal("packaging"), v.literal("syrup"), v.literal("labor"), v.literal("overhead"), v.literal("other")),
+    cost: v.number(), // $ per unit
+    unit: v.string(), // "gal", "oz", "each", "hour"
+    // For converting different units (e.g. Gallon to Oz)
+    volumeOz: v.optional(v.number()), 
+  }),
+
+  // 9. Cafe Menu Items (Recipes)
+  menuItems: defineTable({
+    name: v.string(), // "Latte 12oz"
+    salePrice: v.number(), // $5.50
+    coffeeDosageGrams: v.number(), // 18.5g
+    // Ingredients needed
+    components: v.array(v.object({
+      ingredientId: v.id("ingredients"),
+      quantity: v.number(), // e.g., 10 (oz of milk)
+    })),
+  }),
+
+  // 10. Quality Control (Cupping Sessions)
+  cuppingSessions: defineTable({
+    roastLogId: v.optional(v.id("roastLogs")),
+    cupperName: v.string(),
+    sessionDate: v.number(),
+    score: v.number(), // Total Score (0-100)
+    notes: v.optional(v.string()),
+    // Sensory Attributes (0-10 scale usually)
+    aroma: v.number(),
+    flavor: v.number(),
+    aftertaste: v.number(),
+    acidity: v.number(),
+    body: v.number(),
+    balance: v.number(),
+    uniformity: v.number(),
+    cleanCup: v.number(),
+    sweetness: v.number(),
+    defects: v.optional(v.number()), // Negative points
+  }).index("by_date", ["sessionDate"]),
+
+  // 11. Recipes (Blend Engineering)
+  recipes: defineTable({
+    name: v.string(),
+    targetShrinkage: v.number(),
+    components: v.array(v.object({
+      greenBatchId: v.id("greenInventory"),
+      percentage: v.number(),
+    })),
+    projectedCostPerLb: v.number(),
+    createdAt: v.number(),
+  }).index("by_date", ["createdAt"]),
+
   // 12. Cafe Settings (Global Parameters)
   cafeSettings: defineTable({
     monthlyRevenueGoal: v.number(),

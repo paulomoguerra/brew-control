@@ -3,16 +3,15 @@ import { query, mutation } from "./_generated/server";
 
 export const list = query({
   handler: async (ctx) => {
-    const orders = await (ctx.db as any).query("orders").order("desc").collect();
+    const orders = await ctx.db.query("orders").order("desc").collect();
     
-    // Improved Join Logic: Efficient and Error-Resistant
     const ordersWithClients = await Promise.all(
-      orders.map(async (order: any) => {
+      orders.map(async (order) => {
         try {
           if (!order.clientId) {
             return { ...order, clientName: "No Client Assigned" };
           }
-          const client = await (ctx.db as any).get(order.clientId);
+          const client = await ctx.db.get(order.clientId);
           return {
             ...order,
             clientName: client?.name || "Deleted Client",
@@ -39,8 +38,10 @@ export const add = mutation({
     totalAmount: v.number(),
   },
   handler: async (ctx, args) => {
-    const orderId = await (ctx.db as any).insert("orders", {
+    const client = await ctx.db.get(args.clientId);
+    const orderId = await ctx.db.insert("orders", {
       clientId: args.clientId,
+      clientName: client?.name || "Unknown",
       status: "pending",
       totalAmount: args.totalAmount,
       orderDate: Date.now(),
@@ -48,7 +49,7 @@ export const add = mutation({
     });
 
     for (const item of args.items) {
-        await (ctx.db as any).insert("orderItems", {
+        await ctx.db.insert("orderItems", {
             orderId,
             productId: item.productId,
             quantity: item.quantity,
@@ -56,11 +57,12 @@ export const add = mutation({
         });
         
         // Deduct from Roasted Inventory
-        const product = await (ctx.db as any).get(item.productId);
+        const product = await ctx.db.get(item.productId);
         if (product) {
-            await (ctx.db as any).patch(item.productId, {
-                quantityLbs: product.quantityLbs - item.quantity,
-                status: (product.quantityLbs - item.quantity) < 10 ? 'low_stock' : 'available'
+            const newQty = product.quantityLbs - item.quantity;
+            await ctx.db.patch(item.productId, {
+                quantityLbs: newQty,
+                status: newQty < 5 ? 'low_stock' : newQty <= 0 ? 'out_of_stock' : 'available'
             });
         }
     }
@@ -74,6 +76,6 @@ export const updateStatus = mutation({
     status: v.union(v.literal("pending"), v.literal("roasting"), v.literal("shipped"), v.literal("paid")) 
   },
   handler: async (ctx, args) => {
-    await (ctx.db as any).patch(args.orderId, { status: args.status });
+    await ctx.db.patch(args.orderId, { status: args.status });
   },
 });

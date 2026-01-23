@@ -8,12 +8,12 @@ export const add = mutation({
     pricingTier: v.string(),
   },
   handler: async (ctx, args) => {
-    return await (ctx.db as any).insert("clients", args);
+    return await ctx.db.insert("clients", args);
   },
 });
 
 export const list = query({
   handler: async (ctx) => {
-    return await (ctx.db as any).query("clients").collect();
+    return await ctx.db.query("clients").collect();
   },
 });
