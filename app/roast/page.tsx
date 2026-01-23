@@ -47,6 +47,12 @@ export default function ProductionHub() {
 
   // --- PLAN MODE STATE ---
   const [planGoal, setPlanGoal] = useState<string>(''); 
+  const [planType, setPlanType] = useState<'single' | 'blend'>('single');
+  const [selectedRecipeId, setSelectedRecipeId] = useState('');
+
+  const selectedRecipe = useMemo(() => 
+    recipes?.find(r => r._id === selectedRecipeId),
+  [selectedRecipeId, recipes]);
 
   // --- BLEND DESIGNER STATE ---
   const [newBlendName, setNewBlendName] = useState('');
@@ -78,11 +84,46 @@ export default function ProductionHub() {
   // --- LOGIC: PLANNING ---
   const planResults = useMemo(() => {
     const goalVal = parseFloat(planGoal) || 0;
-    if (goalVal <= 0 || !selectedBatch) return null;
-    const greenRequiredDisplay = goalVal / (1 - (15.5 / 100)); // 15.5% avg shrinkage
-    const isPossible = selectedBatch.quantityLbs >= toStorageWeight(greenRequiredDisplay);
-    return { greenRequired: greenRequiredDisplay, isPossible };
-  }, [planGoal, selectedBatch, toStorageWeight]);
+    if (goalVal <= 0) return null;
+
+    if (planType === 'single') {
+      if (!selectedBatch) return null;
+      const greenRequiredDisplay = goalVal / (1 - (15.5 / 100)); 
+      const isPossible = selectedBatch.quantityLbs >= toStorageWeight(greenRequiredDisplay);
+      return { 
+        type: 'single' as const, 
+        greenRequired: greenRequiredDisplay, 
+        isPossible, 
+        totalCost: greenRequiredDisplay * toDisplayWeight(selectedBatch.costPerLb) 
+      };
+    } else {
+      if (!selectedRecipe) return null;
+      const greenRequiredDisplay = goalVal / (1 - (selectedRecipe.targetShrinkage / 100));
+      
+      const componentRequirements = selectedRecipe.components.map(comp => {
+        const batch = batches?.find(b => b._id === comp.greenBatchId);
+        const requiredWeight = greenRequiredDisplay * (comp.percentage / 100);
+        const requiredLbs = toStorageWeight(requiredWeight);
+        return {
+          origin: batch?.origin || 'Unknown',
+          required: requiredWeight,
+          isPossible: batch ? batch.quantityLbs >= requiredLbs : false,
+          cost: requiredWeight * (batch ? toDisplayWeight(batch.costPerLb) : 0)
+        };
+      });
+
+      const isPossible = componentRequirements.every(c => c.isPossible);
+      const totalCost = componentRequirements.reduce((acc, c) => acc + c.cost, 0);
+
+      return { 
+        type: 'blend' as const, 
+        greenRequired: greenRequiredDisplay, 
+        isPossible, 
+        componentRequirements, 
+        totalCost 
+      };
+    }
+  }, [planGoal, planType, selectedBatch, selectedRecipe, batches, toStorageWeight, toDisplayWeight]);
 
   // --- LOGIC: BLENDS ---
   const blendStats = useMemo(() => {
@@ -235,6 +276,21 @@ export default function ProductionHub() {
           {activeTab === 'plan' && (
             <Card title="Production Planner" subtitle="Reverse calculation from roasted target">
                <div className="space-y-8">
+                  <div className="flex bg-slate-50 p-1 rounded-xl w-fit">
+                    <button 
+                      onClick={() => setPlanType('single')}
+                      className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${planType === 'single' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                      Single Batch
+                    </button>
+                    <button 
+                      onClick={() => setPlanType('blend')}
+                      className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${planType === 'blend' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                      Blend Recipe
+                    </button>
+                  </div>
+
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Target Roasted Output ({unit})</label>
                     <input 
@@ -245,22 +301,59 @@ export default function ProductionHub() {
                       className="input-field bg-white text-xl font-bold"
                     />
                   </div>
-                  <div className="space-y-4">
-                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Select Source Batch</label>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {batches?.slice(0, 4).map(b => (
-                          <button key={b._id} onClick={() => setSelectedBatchId(b._id)} className={`p-5 rounded-2xl border-2 text-left transition-all ${selectedBatchId === b._id ? 'border-amber-500 bg-amber-50' : 'border-slate-100 hover:border-slate-200 bg-white'}`}>
-                             <div className="font-bold text-slate-900">{b.origin}</div>
-                             <div className="text-xs font-medium text-slate-500">{formatWeight(b.quantityLbs)} Available</div>
-                          </button>
-                        ))}
-                     </div>
-                  </div>
+
+                  {planType === 'single' ? (
+                    <div className="space-y-4">
+                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Select Source Batch</label>
+                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {batches?.slice(0, 4).map(b => (
+                            <button key={b._id} onClick={() => setSelectedBatchId(b._id)} className={`p-5 rounded-2xl border-2 text-left transition-all ${selectedBatchId === b._id ? 'border-amber-500 bg-amber-50' : 'border-slate-100 hover:border-slate-200 bg-white'}`}>
+                               <div className="font-bold text-slate-900">{b.origin}</div>
+                               <div className="text-xs font-medium text-slate-500">{formatWeight(b.quantityLbs)} Available</div>
+                            </button>
+                          ))}
+                       </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Select Blend Recipe</label>
+                       <select value={selectedRecipeId} onChange={e => setSelectedRecipeId(e.target.value)} className="input-field bg-white">
+                          <option value="">Select Recipe...</option>
+                          {recipes?.map(r => (
+                            <option key={r._id} value={r._id}>{r.name}</option>
+                          ))}
+                       </select>
+                    </div>
+                  )}
+
                   {planResults && (
-                    <div className={`p-8 rounded-[2rem] text-center space-y-2 ${planResults.isPossible ? 'bg-slate-900 text-white' : 'bg-red-50 border border-red-100'}`}>
-                       <span className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-500">Green Coffee Required</span>
-                       <div className="text-5xl font-black">{planResults.greenRequired.toFixed(1)} {unit}</div>
-                       {!planResults.isPossible && <p className="text-red-500 font-bold text-xs">⚠️ Warning: Not enough green coffee in stock.</p>}
+                    <div className={`p-8 rounded-[2rem] space-y-6 ${planResults.isPossible ? 'bg-slate-900 text-white shadow-2xl' : 'bg-red-50 border border-red-100'}`}>
+                       <div className="text-center">
+                          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-500">Total Green Required</span>
+                          <div className="text-5xl font-black mt-2">{planResults.greenRequired.toFixed(1)} {unit}</div>
+                          <div className="text-xs font-bold text-slate-400 mt-2">Est. Cost: {formatCurrency(planResults.totalCost)}</div>
+                          {!planResults.isPossible && <p className="text-red-500 font-bold text-xs mt-4">⚠️ Warning: Insufficient green coffee in stock.</p>}
+                       </div>
+
+                       {planResults.type === 'blend' && (
+                         <div className="space-y-3 pt-6 border-t border-slate-800">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Component Breakdown</span>
+                            {planResults.componentRequirements?.map((c, i) => (
+                              <div key={i} className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
+                                 <div>
+                                    <div className="font-bold text-sm">{c.origin}</div>
+                                    <div className={`text-[10px] font-black uppercase ${c.isPossible ? 'text-green-500' : 'text-red-500'}`}>
+                                       {c.isPossible ? 'In Stock' : 'Out of Stock'}
+                                    </div>
+                                 </div>
+                                 <div className="text-right">
+                                    <div className="font-black">{c.required.toFixed(1)} {unit}</div>
+                                    <div className="text-[10px] text-slate-500">{formatCurrency(c.cost)}</div>
+                                 </div>
+                              </div>
+                            ))}
+                         </div>
+                       )}
                     </div>
                   )}
                </div>
