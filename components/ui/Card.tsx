@@ -27,11 +27,14 @@ export function Card({ children, className = '', title, subtitle, action }: Card
   );
 }
 
-export function StatCard({ label, value, icon, trend, alert }: any) {
+export function StatCard({ label, value, icon, trend, alert, onClick }: any) {
   return (
-    <div className={`bg-white p-5 md:p-6 rounded-[2rem] border ${alert ? 'border-red-200 bg-red-50' : 'border-slate-200'} shadow-sm transition-all hover:shadow-lg`}>
+    <div 
+      onClick={onClick}
+      className={`bg-white p-5 md:p-6 rounded-[2rem] border ${alert ? 'border-red-200 bg-red-50' : 'border-slate-200'} shadow-sm transition-all hover:shadow-lg ${onClick ? 'cursor-pointer active:scale-95 group' : ''}`}
+    >
       <div className="flex justify-between items-start mb-4">
-        <div className={`p-2 md:p-3 rounded-xl border ${alert ? 'bg-white border-red-100' : 'bg-slate-50 border-slate-100'}`}>
+        <div className={`p-2 md:p-3 rounded-xl border ${alert ? 'bg-white border-red-100' : 'bg-slate-50 border-slate-100'} ${onClick ? 'group-hover:bg-amber-50 group-hover:border-amber-100 transition-colors' : ''}`}>
           {icon}
         </div>
         {trend && (
