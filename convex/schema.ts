@@ -136,10 +136,10 @@ export default defineSchema({
 
   // 12. Cafe Settings (Global Parameters)
   cafeSettings: defineTable({
-    monthlyRevenueGoal: v.number(),
-    defaultTargetMargin: v.number(),
-    taxRate: v.number(),
-    isBurdenEnabled: v.boolean(), // Toggle for System-wide Overhead Math
+    monthlyRevenueGoal: v.optional(v.number()),
+    defaultTargetMargin: v.optional(v.number()),
+    taxRate: v.optional(v.number()),
+    isBurdenEnabled: v.optional(v.boolean()),
   }),
 
   // 13. Operating Expenses (The Burden Ledger)

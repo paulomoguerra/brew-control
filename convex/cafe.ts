@@ -6,18 +6,15 @@ import { mutation, query } from "./_generated/server";
 export const getSettings = query({
   handler: async (ctx) => {
     try {
-      const settings = await (ctx.db as any).query("cafeSettings").first();
-      if (!settings) {
-        return {
-          monthlyRevenueGoal: 15000,
-          defaultTargetMargin: 75,
-          taxRate: 8,
-          isBurdenEnabled: false
-        };
-      }
-      return settings;
+      const settings = await ctx.db.query("cafeSettings").first();
+      return {
+        monthlyRevenueGoal: settings?.monthlyRevenueGoal ?? 15000,
+        defaultTargetMargin: settings?.defaultTargetMargin ?? 75,
+        taxRate: settings?.taxRate ?? 8,
+        isBurdenEnabled: settings?.isBurdenEnabled ?? false,
+        _id: settings?._id
+      };
     } catch (e) {
-      console.error("Error fetching settings:", e);
       return {
         monthlyRevenueGoal: 15000,
         defaultTargetMargin: 75,
@@ -36,11 +33,11 @@ export const updateSettings = mutation({
     isBurdenEnabled: v.boolean(),
   },
   handler: async (ctx, args) => {
-    const existing = await (ctx.db as any).query("cafeSettings").first();
+    const existing = await ctx.db.query("cafeSettings").first();
     if (existing) {
-      await (ctx.db as any).patch(existing._id, args);
+      await ctx.db.patch(existing._id, args);
     } else {
-      await (ctx.db as any).insert("cafeSettings", args);
+      await ctx.db.insert("cafeSettings", args);
     }
   }
 });
@@ -50,7 +47,8 @@ export const updateSettings = mutation({
 export const listExpenses = query({
   handler: async (ctx) => {
     try {
-      return await (ctx.db as any).query("operatingExpenses").order("desc").collect();
+      const expenses = await ctx.db.query("operatingExpenses").collect();
+      return expenses || [];
     } catch (e) {
       return [];
     }
@@ -65,7 +63,7 @@ export const addExpense = mutation({
     recurrence: v.union(v.literal("monthly"), v.literal("one-time")),
   },
   handler: async (ctx, args) => {
-    await (ctx.db as any).insert("operatingExpenses", {
+    await ctx.db.insert("operatingExpenses", {
       ...args,
       date: Date.now()
     });
@@ -75,24 +73,22 @@ export const addExpense = mutation({
 export const deleteExpense = mutation({
   args: { id: v.id("operatingExpenses") },
   handler: async (ctx, args) => {
-    await (ctx.db as any).delete(args.id);
+    await ctx.db.delete(args.id);
   }
 });
 
 // --- Income ---
 
 export const listIncome = query({
-  handler: async (ctx) => {
+  args: { now: v.number() },
+  handler: async (ctx, args) => {
     try {
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-      return await (ctx.db as any).query("dailyIncome")
-        .withIndex("by_date", (q: any) => q.gte("date", startOfMonth))
-        .order("desc")
-        .collect();
+      const date = new Date(args.now);
+      const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1).getTime();
+      const income = await ctx.db.query("dailyIncome").order("desc").collect();
+      return (income || []).filter(i => i.date >= startOfMonth);
     } catch (e) {
-      // Fallback if index missing
-      return await (ctx.db as any).query("dailyIncome").order("desc").take(50);
+      return [];
     }
   }
 });
@@ -100,7 +96,7 @@ export const listIncome = query({
 export const addDailyIncome = mutation({
   args: { amount: v.number(), notes: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    await (ctx.db as any).insert("dailyIncome", {
+    await ctx.db.insert("dailyIncome", {
       ...args,
       date: Date.now()
     });
@@ -110,68 +106,47 @@ export const addDailyIncome = mutation({
 // --- Analysis & Intelligence ---
 
 export const getFinancialSummary = query({
-  handler: async (ctx) => {
+  args: { now: v.number() },
+  handler: async (ctx, args) => {
     try {
-      const settings = await (ctx.db as any).query("cafeSettings").first() || {
-        monthlyRevenueGoal: 15000,
-        isBurdenEnabled: false
-      };
+      const settings = await ctx.db.query("cafeSettings").first();
+      const revenueGoal = settings?.monthlyRevenueGoal ?? 15000;
+      const isBurdenEnabled = settings?.isBurdenEnabled ?? false;
 
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+      const date = new Date(args.now);
+      const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1).getTime();
 
       // 1. Income this month
-      let incomeRecords = [];
-      try {
-        incomeRecords = await (ctx.db as any).query("dailyIncome")
-          .withIndex("by_date", (q: any) => q.gte("date", startOfMonth))
-          .collect();
-      } catch (e) {
-        // Fallback: fetch all and filter in memory
-        const allIncome = await (ctx.db as any).query("dailyIncome").collect();
-        incomeRecords = allIncome.filter((i: any) => i.date >= startOfMonth);
-      }
-      
-      const totalIncome = incomeRecords.reduce((acc: number, curr: any) => acc + (curr.amount || 0), 0);
+      const allIncome = await ctx.db.query("dailyIncome").collect();
+      const incomeThisMonth = (allIncome || []).filter((i) => (i.date || 0) >= startOfMonth);
+      const totalIncome = incomeThisMonth.reduce((acc, curr) => acc + (curr.amount || 0), 0);
 
-      // 2. Expenses (Fixed monthly + variable this month)
-      const allExpenses = await (ctx.db as any).query("operatingExpenses").collect();
-      const monthlyOverhead = allExpenses.reduce((acc: number, curr: any) => {
+      // 2. Expenses
+      const allExpenses = await ctx.db.query("operatingExpenses").collect();
+      const monthlyOverhead = (allExpenses || []).reduce((acc, curr) => {
         const cost = curr.cost || 0;
         if (curr.recurrence === "monthly") return acc + cost;
-        if (curr.date >= startOfMonth) return acc + cost;
+        if ((curr.date || 0) >= startOfMonth) return acc + cost;
         return acc;
       }, 0);
 
       // 3. Burden Math
-      let roasts = [];
-      try {
-        roasts = await (ctx.db as any).query("roastLogs")
-          .withIndex("by_date", (q: any) => q.gte("roastDate", startOfMonth))
-          .collect();
-      } catch (e) {
-        // Fallback: fetch all and filter in memory
-        const allRoasts = await (ctx.db as any).query("roastLogs").collect();
-        roasts = allRoasts.filter((r: any) => r.roastDate >= startOfMonth);
-      }
-
-      const totalWeightRoastedLbs = roasts.reduce((acc: number, curr: any) => acc + (curr.roastedWeightOut || 0), 0);
-      
-      // Convert to kg burden (Standard)
+      const allRoasts = await ctx.db.query("roastLogs").collect();
+      const roastsThisMonth = (allRoasts || []).filter((r) => (r.roastDate || 0) >= startOfMonth);
+      const totalWeightRoastedLbs = roastsThisMonth.reduce((acc, curr) => acc + (curr.roastedWeightOut || 0), 0);
       const totalWeightKg = totalWeightRoastedLbs * 0.453592;
       const burdenPerKg = totalWeightKg > 0 ? (monthlyOverhead / totalWeightKg) : 0;
 
       return {
         totalIncome: Number.isFinite(totalIncome) ? totalIncome : 0,
         monthlyOverhead: Number.isFinite(monthlyOverhead) ? monthlyOverhead : 0,
-        revenueGoal: settings.monthlyRevenueGoal || 15000,
+        revenueGoal: Number.isFinite(revenueGoal) ? revenueGoal : 15000,
         burdenPerKg: Number.isFinite(burdenPerKg) ? burdenPerKg : 0,
-        isBurdenEnabled: !!settings.isBurdenEnabled,
+        isBurdenEnabled: !!isBurdenEnabled,
         burnRatePerDay: Number.isFinite(monthlyOverhead / 30) ? (monthlyOverhead / 30) : 0
       };
     } catch (err) {
-      console.error("Financial Summary Error:", err);
-      // Return safe defaults to prevent UI crash
+      console.error("Summary Error", err);
       return {
         totalIncome: 0,
         monthlyOverhead: 0,
@@ -184,11 +159,11 @@ export const getFinancialSummary = query({
   }
 });
 
-// Re-implementing ingredients/menu items
 export const listIngredients = query({ 
   handler: async (ctx) => {
     try {
-      return await (ctx.db as any).query("ingredients").order("desc").collect();
+      const ingredients = await ctx.db.query("ingredients").collect();
+      return ingredients || [];
     } catch (e) { return []; }
   }
 });
@@ -201,31 +176,33 @@ export const addIngredient = mutation({
     unit: v.string(),
     volumeOz: v.optional(v.number()),
   },
-  handler: async (ctx, args) => await (ctx.db as any).insert("ingredients", args)
+  handler: async (ctx, args) => await ctx.db.insert("ingredients", args)
 });
 
 export const deleteIngredient = mutation({ 
   args: { id: v.id("ingredients") }, 
-  handler: async (ctx, args) => await (ctx.db as any).delete(args.id) 
+  handler: async (ctx, args) => await ctx.db.delete(args.id) 
 });
 
 export const listMenuItems = query({
   handler: async (ctx) => {
     try {
-      const items = await (ctx.db as any).query("menuItems").collect();
-      const ingredients = await (ctx.db as any).query("ingredients").collect();
-      const roastedStock = await (ctx.db as any).query("roastedInventory").collect();
+      const items = await ctx.db.query("menuItems").collect();
+      const ingredients = await ctx.db.query("ingredients").collect();
+      const roastedStock = await ctx.db.query("roastedInventory").collect();
 
-      return items.map((item: any) => {
-        const totalStockWeight = roastedStock.reduce((a: number, b: any) => a + (b.quantityLbs || 0), 0);
+      if (!items) return [];
+
+      return items.map((item) => {
+        const totalStockWeight = (roastedStock || []).reduce((a, b) => a + (b.quantityLbs || 0), 0);
         const avgCostLb = totalStockWeight > 0 
-          ? roastedStock.reduce((a: number, b: any) => a + ((b.quantityLbs || 0) * (b.costPerLb || 0)), 0) / totalStockWeight
+          ? roastedStock.reduce((a, b) => a + ((b.quantityLbs || 0) * (b.costPerLb || 0)), 0) / totalStockWeight
           : 10;
         
         const coffeeCost = (item.coffeeDosageGrams || 0) * (avgCostLb / 453.592);
         let ingredCost = 0;
-        (item.components || []).forEach((c: any) => {
-          const ing = ingredients.find((x: any) => x._id === c.ingredientId);
+        (item.components || []).forEach((c) => {
+          const ing = (ingredients || []).find((x) => x._id === c.ingredientId);
           if (ing) {
             const cost = ing.cost || 0;
             const volume = ing.volumeOz || 0;
@@ -250,7 +227,6 @@ export const listMenuItems = query({
         };
       });
     } catch (e) {
-      console.error("List Menu Items Error", e);
       return [];
     }
   }
@@ -263,10 +239,10 @@ export const addMenuItem = mutation({
     coffeeDosageGrams: v.number(),
     components: v.array(v.object({ ingredientId: v.id("ingredients"), quantity: v.number() })),
   },
-  handler: async (ctx, args) => await (ctx.db as any).insert("menuItems", args)
+  handler: async (ctx, args) => await ctx.db.insert("menuItems", args)
 });
 
 export const deleteMenuItem = mutation({ 
   args: { id: v.id("menuItems") }, 
-  handler: async (ctx, args) => await (ctx.db as any).delete(args.id) 
+  handler: async (ctx, args) => await ctx.db.delete(args.id) 
 });

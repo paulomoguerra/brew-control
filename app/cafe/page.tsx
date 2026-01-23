@@ -17,9 +17,11 @@ export default function CafePage() {
   const { showToast } = useToast();
   
   // --- DATA ---
-  const summary = useQuery(api.cafe.getFinancialSummary);
+  const now = Date.now();
+  const summary = useQuery(api.cafe.getFinancialSummary, { now });
   const settings = useQuery(api.cafe.getSettings);
   const expenses = useQuery(api.cafe.listExpenses);
+  const income = useQuery(api.cafe.listIncome, { now });
   const ingredients = useQuery(api.cafe.listIngredients);
   const menuItems = useQuery(api.cafe.listMenuItems);
   const roastedStock = useQuery(api.inventory.listRoasted);
