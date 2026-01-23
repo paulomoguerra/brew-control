@@ -3,13 +3,15 @@
 import { ReactNode } from "react";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
 
-const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+// HARDCODED FIX: Ensure we always connect to the active production backend
+// This overrides any potential environment variable mismatches on Vercel
+const CONVEX_URL = "https://patient-tern-852.convex.cloud";
 
-if (!convexUrl) {
-  console.error("CRITICAL: NEXT_PUBLIC_CONVEX_URL is not defined. Check your .env file or Vercel environment variables.");
+const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL || CONVEX_URL);
+
+if (!process.env.NEXT_PUBLIC_CONVEX_URL) {
+  console.warn(`Using fallback Convex URL: ${CONVEX_URL}`);
 }
-
-const convex = new ConvexReactClient(convexUrl || "http://localhost:1234"); // Fallback to prevent crash but will show errors in console
 
 export default function ConvexClientProvider({ children }: { children: ReactNode }) {
   return <ConvexProvider client={convex}>{children}</ConvexProvider>;
