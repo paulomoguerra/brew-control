@@ -78,7 +78,7 @@ export default function DashboardPage() {
     return Object.keys(monthlyData).map(key => ({ name: key, revenue: monthlyData[key] }));
   }, [orders]);
 
-  const isLoading = !inventory || !orders || !roasts;
+  const isLoading = inventory === undefined || orders === undefined || roasts === undefined;
 
   if (isLoading) {
       return <div className="p-8 text-center text-slate-400 font-bold animate-pulse">Loading Dashboard...</div>;

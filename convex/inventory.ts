@@ -3,7 +3,6 @@ import { mutation, query } from "./_generated/server";
 
 // Green Inventory
 export const list = query({
-  args: {},
   handler: async (ctx) => {
     return await ctx.db.query("greenInventory")
       .withIndex("by_quantity")
