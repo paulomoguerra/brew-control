@@ -5,14 +5,22 @@ export const list = query({
   handler: async (ctx) => {
     const orders = await ctx.db.query("orders").order("desc").collect();
     
-    // Join with client names
+    // Improved Join Logic: Efficient and Error-Resistant
     const ordersWithClients = await Promise.all(
       orders.map(async (order) => {
-        const client = await ctx.db.get(order.clientId);
-        return {
-          ...order,
-          clientName: client?.name || "Unknown Client",
-        };
+        try {
+          if (!order.clientId) {
+            return { ...order, clientName: "No Client Assigned" };
+          }
+          const client = await ctx.db.get(order.clientId);
+          return {
+            ...order,
+            clientName: client?.name || "Deleted Client",
+          };
+        } catch (e) {
+          console.error(`Error joining client for order ${order._id}:`, e);
+          return { ...order, clientName: "Error Loading Client" };
+        }
       })
     );
     

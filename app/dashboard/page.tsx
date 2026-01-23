@@ -81,7 +81,22 @@ export default function DashboardPage() {
   const isLoading = inventory === undefined || orders === undefined || roasts === undefined;
 
   if (isLoading) {
-      return <div className="p-8 text-center text-slate-400 font-bold animate-pulse">Loading Dashboard...</div>;
+      return (
+        <div className="p-8 space-y-4 text-center">
+          <div className="text-slate-400 font-bold animate-pulse text-xl">Loading Executive Dashboard...</div>
+          <div className="flex flex-col gap-2 items-center text-xs font-mono text-slate-500">
+            <div className={inventory === undefined ? "animate-pulse" : "text-green-500"}>
+              Inventory: {inventory === undefined ? "⌛" : "✅"}
+            </div>
+            <div className={orders === undefined ? "animate-pulse" : "text-green-500"}>
+              Orders: {orders === undefined ? "⌛" : "✅"}
+            </div>
+            <div className={roasts === undefined ? "animate-pulse" : "text-green-500"}>
+              Roast Logs: {roasts === undefined ? "⌛" : "✅"}
+            </div>
+          </div>
+        </div>
+      );
   }
 
   return (
