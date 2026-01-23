@@ -10,7 +10,9 @@ export default defineSchema({
     variety: v.optional(v.string()),
     quantityLbs: v.number(),      // Current stock
     initialQuantityLbs: v.number(), // For burn-down charts
-    costPerLb: v.number(),        // Accurate COGS basis
+    costPerLb: v.number(),        // Base cost
+    shippingCost: v.optional(v.number()), // Total shipping paid for batch
+    taxCost: v.optional(v.number()),      // Total taxes/customs paid for batch
     supplier: v.optional(v.string()),
     arrivedAt: v.number(),        // Date
     status: v.union(v.literal("active"), v.literal("archived")),

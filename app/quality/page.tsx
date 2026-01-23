@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { Award, Loader2, CheckCircle2, TrendingUp, Star, Microscope } from 'lucide-react';
+import { Award, Loader2, CheckCircle2, TrendingUp, Star, Microscope, X } from 'lucide-react';
 import { useUnits } from '../../lib/units';
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis, ReferenceLine } from 'recharts';
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis, ReferenceLine, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
 
@@ -39,9 +39,22 @@ export default function QualityPage() {
     defects: 0
   });
 
-  const isLoading = recentRoasts === undefined || sessions === undefined;
+  const [selectedSession, setSelectedSession] = useState<any>(null);
 
+  const isLoading = recentRoasts === undefined || sessions === undefined;
   const totalScore = Object.values(attributes).reduce((a, b) => a + b, 0) - (attributes.defects * 2);
+
+  const radarData = useMemo(() => {
+    const source = selectedSession || attributes;
+    return [
+      { subject: 'Aroma', A: source.aroma, fullMark: 10 },
+      { subject: 'Flavor', A: source.flavor, fullMark: 10 },
+      { subject: 'Acidity', A: source.acidity, fullMark: 10 },
+      { subject: 'Body', A: source.body, fullMark: 10 },
+      { subject: 'Balance', A: source.balance, fullMark: 10 },
+      { subject: 'Sweetness', A: source.sweetness, fullMark: 10 },
+    ];
+  }, [selectedSession, attributes]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,6 +91,7 @@ export default function QualityPage() {
     z: 1,
     name: s.roastInfo?.productName || "Unknown",
     batch: s.roastInfo?.batchId || "?",
+    original: s
   })).filter(d => d.x > 0) || [];
 
   if (isLoading) {
@@ -204,9 +218,66 @@ export default function QualityPage() {
           </form>
         </div>
 
-        {/* Right: Value Matrix Chart */}
+        {/* Right: Charts */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 shadow-sm min-h-[400px] md:h-[550px] flex flex-col">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Radar Chart */}
+            <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 shadow-sm h-[400px] flex flex-col items-center">
+               <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-6">Sensory Profile</h3>
+               <div className="flex-1 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                      <PolarGrid stroke="#f1f5f9" />
+                      <PolarAngleAxis dataKey="subject" tick={{fontSize: 10, fontWeight: 700, fill: '#64748b'}} />
+                      <Radar
+                        name="Score"
+                        dataKey="A"
+                        stroke="#f59e0b"
+                        fill="#f59e0b"
+                        fillOpacity={0.6}
+                      />
+                    </RadarChart>
+                  </ResponsiveContainer>
+               </div>
+            </div>
+
+            {/* Selected Info Card */}
+            <div className={`bg-slate-900 text-white p-6 md:p-8 rounded-[2rem] shadow-sm h-[400px] flex flex-col justify-between relative overflow-hidden transition-all ${selectedSession ? 'opacity-100' : 'opacity-40'}`}>
+               <div className="absolute top-0 right-0 p-8 opacity-10"><Award size={120} /></div>
+               {selectedSession ? (
+                 <>
+                   <div className="relative z-10">
+                      <div className="flex justify-between items-start mb-4">
+                         <div>
+                            <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Selected Session</span>
+                            <h3 className="text-xl font-bold mt-1">{selectedSession.roastInfo?.productName}</h3>
+                         </div>
+                         <button onClick={() => setSelectedSession(null)} className="p-2 bg-slate-800 rounded-full hover:bg-slate-700 transition-colors"><X size={14}/></button>
+                      </div>
+                      <div className="text-4xl font-black text-white mb-6">{selectedSession.score.toFixed(1)} <span className="text-xs text-slate-400 font-bold uppercase tracking-widest">SCA Score</span></div>
+                      <p className="text-slate-400 text-sm italic leading-relaxed">"{selectedSession.notes || 'No cupping notes provided for this session.'}"</p>
+                   </div>
+                   <div className="relative z-10 grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-slate-800">
+                      <div>
+                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Cupper</div>
+                        <div className="font-bold text-sm">{selectedSession.cupperName}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Date</div>
+                        <div className="font-bold text-sm">{new Date(selectedSession.sessionDate).toLocaleDateString()}</div>
+                      </div>
+                   </div>
+                 </>
+               ) : (
+                 <div className="flex flex-col items-center justify-center h-full text-center">
+                    <p className="font-bold text-slate-500 text-sm">Select a point in the matrix to view profile.</p>
+                 </div>
+               )}
+            </div>
+          </div>
+
+          {/* Value Matrix */}
+          <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 shadow-sm h-[400px] flex flex-col">
             <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
               <div>
                 <h3 className="text-lg font-black text-slate-800 tracking-tight">Value Matrix</h3>
@@ -218,7 +289,7 @@ export default function QualityPage() {
               </div>
             </div>
             
-            <div className="flex-1 w-full min-h-[300px]">
+            <div className="flex-1 w-full min-h-0">
                {scatterData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 0 }}>
@@ -264,7 +335,13 @@ export default function QualityPage() {
                     <ReferenceLine x={12} stroke="#e2e8f0" strokeWidth={2} />
                     <ReferenceLine y={84} stroke="#e2e8f0" strokeWidth={2} />
 
-                    <Scatter name="Batches" data={scatterData} fill="#0f172a">
+                    <Scatter 
+                      name="Batches" 
+                      data={scatterData} 
+                      fill="#0f172a"
+                      onClick={(e) => setSelectedSession(e.original)}
+                      className="cursor-pointer"
+                    >
                       {scatterData.map((entry, index) => (
                         <circle 
                           key={index} 
@@ -280,7 +357,7 @@ export default function QualityPage() {
                ) : (
                  <div className="flex flex-col items-center justify-center h-full text-center opacity-40">
                     <TrendingUp size={48} className="mb-4 text-slate-400" />
-                    <p className="font-bold text-slate-500">Log cupping scores to visualize value.</p>
+                    <p className="font-bold text-slate-500 text-sm">Log cupping scores to visualize value.</p>
                  </div>
                )}
             </div>

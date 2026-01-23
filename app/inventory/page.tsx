@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { Plus, Loader2, Package, AlertTriangle, DollarSign } from 'lucide-react';
+import { Plus, Loader2, Package, AlertTriangle, DollarSign, Info } from 'lucide-react';
 import { useUnits } from '../../lib/units';
 import { useToast } from '../../components/ui/Toast';
 import { Card, StatCard } from '../../components/ui/Card';
@@ -26,7 +26,9 @@ export default function InventoryPage() {
     origin: '',
     process: 'Washed',
     quantityInput: '',
-    costInput: ''
+    costInput: '',
+    shippingInput: '',
+    taxInput: ''
   });
 
   const handleAddBatch = async (e: React.FormEvent) => {
@@ -35,6 +37,8 @@ export default function InventoryPage() {
     
     const quantityLbs = toStorageWeight(parseFloat(newBatch.quantityInput) || 0);
     const inputCost = parseFloat(newBatch.costInput) || 0;
+    const shipping = parseFloat(newBatch.shippingInput) || 0;
+    const tax = parseFloat(newBatch.taxInput) || 0;
     const costPerLb = unit === 'lbs' ? inputCost : inputCost / 2.20462;
 
     try {
@@ -45,8 +49,10 @@ export default function InventoryPage() {
           origin: newBatch.origin,
           process: newBatch.process,
           quantityLbs: quantityLbs,
-          costPerLb: costPerLb
-        });
+          costPerLb: costPerLb,
+          shippingCost: shipping,
+          taxCost: tax
+        } as any); // Type assertion until schema syncs
         showToast('Batch updated successfully', 'success');
       } else {
         await addInventory({
@@ -54,8 +60,11 @@ export default function InventoryPage() {
           origin: newBatch.origin,
           process: newBatch.process,
           quantityLbs: quantityLbs,
-          costPerLb: costPerLb
-        });
+          costPerLb: costPerLb,
+          shippingCost: shipping,
+          taxCost: tax,
+          initialQuantityLbs: quantityLbs
+        } as any);
         showToast('Batch added successfully', 'success');
       }
       setIsModalOpen(false);
@@ -69,7 +78,7 @@ export default function InventoryPage() {
   };
 
   const resetForm = () => {
-    setNewBatch({ batchNumber: '', origin: '', process: 'Washed', quantityInput: '', costInput: '' });
+    setNewBatch({ batchNumber: '', origin: '', process: 'Washed', quantityInput: '', costInput: '', shippingInput: '', taxInput: '' });
     setEditingId(null);
   };
 
@@ -80,7 +89,9 @@ export default function InventoryPage() {
       origin: item.origin,
       process: item.process || 'Washed',
       quantityInput: toDisplayWeight(item.quantityLbs).toString(),
-      costInput: toDisplayPrice(item.costPerLb).toString()
+      costInput: toDisplayPrice(item.costPerLb).toString(),
+      shippingInput: item.shippingCost?.toString() || '',
+      taxInput: item.taxCost?.toString() || ''
     });
     setIsModalOpen(true);
   };
@@ -194,13 +205,45 @@ export default function InventoryPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Quantity ({unit})</label>
-                  <input required type="number" placeholder={`Weight (${unit})`} value={newBatch.quantityInput} onChange={e => setNewBatch({...newBatch, quantityInput: e.target.value})} className="input-field" />
+                  <input required type="number" step="0.01" placeholder={`Weight (${unit})`} value={newBatch.quantityInput} onChange={e => setNewBatch({...newBatch, quantityInput: e.target.value})} className="input-field" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cost per {unit}</label>
-                  <input required type="number" placeholder={`Cost ($/${unit})`} value={newBatch.costInput} onChange={e => setNewBatch({...newBatch, costInput: e.target.value})} className="input-field" />
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Green Price (per {unit})</label>
+                  <input required type="number" step="0.01" placeholder={`Cost ($/${unit})`} value={newBatch.costInput} onChange={e => setNewBatch({...newBatch, costInput: e.target.value})} className="input-field" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Shipping Cost (Total)</label>
+                  <input type="number" step="0.01" placeholder="Total Shipping" value={newBatch.shippingInput} onChange={e => setNewBatch({...newBatch, shippingInput: e.target.value})} className="input-field" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tax/Customs (Total)</label>
+                  <input type="number" step="0.01" placeholder="Total Taxes" value={newBatch.taxInput} onChange={e => setNewBatch({...newBatch, taxInput: e.target.value})} className="input-field" />
                 </div>
               </div>
+
+              {/* Landed Cost Breakdown */}
+              {parseFloat(newBatch.quantityInput) > 0 && (
+                <div className="bg-slate-900 text-white p-5 rounded-2xl space-y-3">
+                   <div className="flex justify-between items-center text-[10px] font-black text-amber-500 uppercase tracking-widest">
+                      <span>Landed Cost Projection</span>
+                      <Info size={14} />
+                   </div>
+                   <div className="flex justify-between items-baseline">
+                      <span className="text-slate-400 text-sm">Calculated Landed Price:</span>
+                      <div className="text-right">
+                         <span className="text-2xl font-black">{formatCurrency(
+                            (parseFloat(newBatch.costInput) || 0) + 
+                            ((parseFloat(newBatch.shippingInput) || 0) + (parseFloat(newBatch.taxInput) || 0)) / (parseFloat(newBatch.quantityInput) || 1)
+                         )}</span>
+                         <span className="text-xs text-slate-400 font-bold ml-1">/{unit}</span>
+                      </div>
+                   </div>
+                   <p className="text-[10px] text-slate-500 leading-tight">
+                     Includes shipping and taxes amortized across total weight. This will be your financial basis for profit margins.
+                   </p>
+                </div>
+              )}
+
               <div className="flex flex-col-reverse sm:flex-row gap-4 pt-2">
                 <button type="button" onClick={handleCloseModal} className="w-full sm:flex-1 btn-secondary">Cancel</button>
                 <button type="submit" disabled={isSaving} className="w-full sm:flex-2 btn-primary">
