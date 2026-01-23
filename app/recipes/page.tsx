@@ -40,14 +40,14 @@ export default function RecipesPage() {
     
     let totalPercentage = 0;
     let weightedGreenCost = 0;
-    const pieData = [];
+    const pieData: any[] = [];
 
     components.forEach(comp => {
       const batch = inventory.find(b => b._id === comp.greenBatchId);
       if (batch) {
         totalPercentage += comp.percentage;
         weightedGreenCost += batch.costPerLb * (comp.percentage / 100);
-        pieData.push({ name: batch.origin, value: comp.percentage, color: '#f59e0b' });
+        pieData.push({ name: batch.origin, value: comp.percentage });
       }
     });
 
@@ -76,7 +76,10 @@ export default function RecipesPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (Math.abs(calculatedStats.totalPercentage - 100) > 0.1) return; // Must equal 100%
+    if (Math.abs(calculatedStats.totalPercentage - 100) > 0.1) {
+      showToast('Total percentage must be 100%', 'error');
+      return;
+    }
     
     setIsSaving(true);
     try {
@@ -112,32 +115,49 @@ export default function RecipesPage() {
 
   const COLORS = ['#f59e0b', '#0f172a', '#64748b', '#cbd5e1'];
 
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8">
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="space-y-2">
+            <Skeleton className="h-8 md:h-10 w-[200px] md:w-[300px]" />
+            <Skeleton className="h-4 w-full max-w-[400px]" />
+          </div>
+          <Skeleton className="h-12 w-full sm:w-[150px] rounded-xl" />
+        </header>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          <Skeleton className="h-48 rounded-2xl" />
+          <Skeleton className="h-48 rounded-2xl" />
+          <Skeleton className="h-48 rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700 p-8">
-      <div className="flex justify-between items-center">
+    <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 animate-in fade-in duration-700 p-4 md:p-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tighter">Recipe Engineering</h1>
-          <p className="text-slate-500 font-medium">Design blends and forecast margins before roasting.</p>
+          <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter">Recipe Engineering</h1>
+          <p className="text-slate-500 font-medium text-sm md:text-base">Design blends and forecast margins before roasting.</p>
         </div>
         {!isCreating && (
-          <button onClick={() => setIsCreating(true)} className="btn-primary flex items-center gap-2">
+          <button onClick={() => setIsCreating(true)} className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto">
             <Plus size={20} /> New Recipe
           </button>
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
         
         {/* Left: Recipe List */}
-        <div className={`${isCreating ? 'lg:col-span-1' : 'lg:col-span-3'} space-y-6 transition-all`}>
-           {!inventory || !recipes ? (
-             <div className="flex justify-center p-12"><Loader2 className="animate-spin text-slate-400" /></div>
-           ) : recipes.length === 0 && !isCreating ? (
+        <div className={`${isCreating ? 'lg:col-span-1' : 'lg:col-span-3'} space-y-4 md:space-y-6 transition-all`}>
+           {recipes.length === 0 && !isCreating ? (
              <div className="text-center p-12 border-2 border-dashed border-slate-200 rounded-[2rem]">
                <p className="text-slate-400 font-bold">No recipes yet. Start designing.</p>
              </div>
            ) : (
-             <div className={`grid gap-4 ${isCreating ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
+             <div className={`grid gap-4 ${isCreating ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
                 {recipes.map(recipe => (
                   <div key={recipe._id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group relative">
                     <button onClick={() => handleDelete(recipe._id)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -150,30 +170,11 @@ export default function RecipesPage() {
                     </div>
                     <div className="space-y-2">
                        {recipe.components.map((comp, idx) => {
-                         const batch = inventory.find(b => b._id === comp.greenBatchId);
-  if (isLoading) {
-    return (
-      <div className="max-w-7xl mx-auto p-8 space-y-8">
-        <header className="flex justify-between items-center">
-          <div className="space-y-2">
-            <Skeleton className="h-10 w-[300px]" />
-            <Skeleton className="h-4 w-[400px]" />
-          </div>
-          <Skeleton className="h-12 w-[150px] rounded-xl" />
-        </header>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Skeleton className="h-48 rounded-2xl" />
-          <Skeleton className="h-48 rounded-2xl" />
-          <Skeleton className="h-48 rounded-2xl" />
-        </div>
-      </div>
-    );
-  }
-
-  return (
+                         const batch = inventory?.find(b => b._id === comp.greenBatchId);
+                         return (
                            <div key={idx} className="flex justify-between text-xs">
-                              <span className="font-medium text-slate-600">{batch?.origin || 'Unknown'}</span>
-                              <span className="font-bold text-slate-900">{comp.percentage}%</span>
+                              <span className="font-medium text-slate-600 truncate mr-2">{batch?.origin || 'Unknown'}</span>
+                              <span className="font-bold text-slate-900 whitespace-nowrap">{comp.percentage}%</span>
                            </div>
                          )
                        })}
@@ -187,15 +188,15 @@ export default function RecipesPage() {
         {/* Right: Creator (Conditional) */}
         {isCreating && (
           <div className="lg:col-span-2">
-            <Card title="Recipe Designer" action={<button onClick={() => setIsCreating(false)} className="text-sm font-bold text-slate-400 hover:text-slate-900">Cancel</button>}>
-              <form onSubmit={handleSave} className="space-y-8">
-                <div className="grid grid-cols-2 gap-6">
+            <Card title="Recipe Designer" action={<button onClick={() => setIsCreating(false)} className="text-[10px] font-black text-slate-400 hover:text-slate-900 uppercase tracking-widest bg-slate-100 px-3 py-1.5 rounded-lg">Cancel</button>}>
+              <form onSubmit={handleSave} className="space-y-6 md:space-y-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recipe Name</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Recipe Name</label>
                     <input required value={name} onChange={e => setName(e.target.value)} className="input-field" placeholder="e.g. House Espresso" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Target Shrinkage (%)</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Target Shrinkage (%)</label>
                     <input 
                       type="number" 
                       step="0.1" 
@@ -209,65 +210,67 @@ export default function RecipesPage() {
 
                 <div className="space-y-4">
                    <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                      <span className="text-xs font-black text-slate-900 uppercase">Blend Components</span>
-                      <button type="button" onClick={addComponent} className="text-xs font-bold text-amber-600 hover:text-amber-700 flex items-center gap-1">
+                      <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Blend Components</span>
+                      <button type="button" onClick={addComponent} className="text-[10px] font-black text-amber-600 hover:text-amber-700 flex items-center gap-1 uppercase tracking-widest">
                         <Plus size={14} /> Add Bean
                       </button>
                    </div>
-                   {components.map((comp, index) => (
-                     <div key={index} className="flex gap-4 items-center animate-in slide-in-from-left-2">
-                        <select 
-                          required 
-                          value={comp.greenBatchId} 
-                          onChange={e => updateComponent(index, 'greenBatchId', e.target.value)} 
-                          className="input-field flex-grow"
-                        >
-                          <option value="">Select Inventory...</option>
-                          {inventory?.map(b => (
-                            <option key={b._id} value={b._id}>{b.origin} ({formatCurrency(b.costPerLb)}/lb)</option>
-                          ))}
-                        </select>
-                        <div className="relative w-24">
-                           <input 
-                              type="number" 
-                              required 
-                              min="0"
-                              max="100"
-                              value={comp.percentage} 
-                              onChange={e => updateComponent(index, 'percentage', parseFloat(e.target.value))} 
-                              className="input-field pr-8 text-right"
-                           />
-                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">%</span>
-                        </div>
-                        {components.length > 1 && (
-                          <button type="button" onClick={() => removeComponent(index)} className="text-slate-300 hover:text-red-500">
-                             <Trash2 size={18} />
-                          </button>
-                        )}
-                     </div>
-                   ))}
+                   <div className="space-y-3">
+                    {components.map((comp, index) => (
+                      <div key={index} className="flex gap-2 md:gap-4 items-center animate-in slide-in-from-left-2">
+                          <select 
+                            required 
+                            value={comp.greenBatchId} 
+                            onChange={e => updateComponent(index, 'greenBatchId', e.target.value)} 
+                            className="input-field flex-grow text-sm"
+                          >
+                            <option value="">Select Inventory...</option>
+                            {inventory?.map(b => (
+                              <option key={b._id} value={b._id}>{b.origin} ({formatCurrency(b.costPerLb)}/lb)</option>
+                            ))}
+                          </select>
+                          <div className="relative w-20 md:w-24 shrink-0">
+                            <input 
+                                type="number" 
+                                required 
+                                min="0"
+                                max="100"
+                                value={comp.percentage} 
+                                onChange={e => updateComponent(index, 'percentage', parseFloat(e.target.value))} 
+                                className="input-field pr-6 md:pr-8 text-right text-sm"
+                            />
+                            <span className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[10px]">%</span>
+                          </div>
+                          {components.length > 1 && (
+                            <button type="button" onClick={() => removeComponent(index)} className="text-slate-300 hover:text-red-500 p-2">
+                                <Trash2 size={18} />
+                            </button>
+                          )}
+                      </div>
+                    ))}
+                   </div>
                 </div>
 
                 {/* Live Analysis */}
-                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                <div className="bg-slate-50 rounded-2xl p-5 md:p-6 border border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                    <div className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-slate-500">Total Composition</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Composition</span>
                         <span className={`text-sm font-black ${Math.abs(calculatedStats.totalPercentage - 100) < 0.1 ? 'text-green-600' : 'text-red-500'}`}>
                            {calculatedStats.totalPercentage}%
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-slate-500">Raw Green Cost</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Raw Green Cost</span>
                         <span className="text-sm font-bold text-slate-900">{formatPrice(calculatedStats.weightedGreenCost)}</span>
                       </div>
                       <div className="pt-4 border-t border-slate-200">
                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Projected Roasted Cost</span>
-                         <div className="text-3xl font-black text-amber-500">{formatPrice(calculatedStats.projectedRoastedCost)}</div>
+                         <div className="text-2xl md:text-3xl font-black text-amber-500">{formatPrice(calculatedStats.projectedRoastedCost)}</div>
                       </div>
                    </div>
                    
-                   <div className="h-32">
+                   <div className="h-32 md:h-40">
                       <ResponsiveContainer width="100%" height="100%">
                         <RePie>
                            <Pie
@@ -292,7 +295,7 @@ export default function RecipesPage() {
                 <button 
                   type="submit" 
                   disabled={isSaving || Math.abs(calculatedStats.totalPercentage - 100) > 0.1} 
-                  className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed py-4"
                 >
                   {isSaving ? <Loader2 className="animate-spin" /> : <Save size={20} />}
                   Save Recipe Config

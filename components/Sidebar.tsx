@@ -3,13 +3,17 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Coffee, LayoutDashboard, Database, Flame, DollarSign, Award, BookOpen, Settings, Store, Package } from "lucide-react";
+import { Coffee, LayoutDashboard, Database, Flame, Award, BookOpen, Settings, Store, Package, X } from "lucide-react";
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const isActive = (href: string) => pathname === href;
 
-  // Reorganized by logical grouping
   const navSections = [
     {
       title: "Overview",
@@ -36,16 +40,28 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="w-64 bg-slate-900 text-white flex flex-col border-r border-slate-800 h-screen sticky top-0 z-40">
-      <Link 
-        href="/"
-        className="p-6 flex items-center gap-3 cursor-pointer hover:bg-slate-800/50 transition-colors"
-      >
-        <div className="bg-amber-500 p-2 rounded-lg text-slate-900">
-          <Coffee size={24} />
-        </div>
-        <span className="text-xl font-bold tracking-tight">RoasterOS</span>
-      </Link>
+    <aside className={`
+      fixed inset-y-0 left-0 z-40 w-64 bg-slate-900 text-white flex flex-col border-r border-slate-800 transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:h-screen
+      ${isOpen ? "translate-x-0" : "-translate-x-full"}
+    `}>
+      <div className="flex items-center justify-between lg:block">
+        <Link 
+          href="/"
+          onClick={onClose}
+          className="p-6 flex items-center gap-3 cursor-pointer hover:bg-slate-800/50 transition-colors w-full"
+        >
+          <div className="bg-amber-500 p-2 rounded-lg text-slate-900">
+            <Coffee size={24} />
+          </div>
+          <span className="text-xl font-bold tracking-tight">RoasterOS</span>
+        </Link>
+        <button 
+          onClick={onClose}
+          className="p-6 text-slate-400 hover:text-white lg:hidden"
+        >
+          <X size={24} />
+        </button>
+      </div>
 
       <nav className="flex-1 px-4 space-y-6 mt-4 overflow-y-auto">
         {navSections.map((section) => (
@@ -58,6 +74,7 @@ export default function Sidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={onClose}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold w-full text-left group relative ${
                     isActive(item.href)
                       ? "bg-amber-500 text-slate-900 shadow-lg shadow-amber-500/20"
@@ -79,6 +96,7 @@ export default function Sidebar() {
       <div className="p-4 border-t border-slate-800 mt-auto">
         <Link
           href="/settings"
+          onClick={onClose}
           className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold w-full text-left ${
             isActive("/settings")
               ? "bg-slate-800 text-white"

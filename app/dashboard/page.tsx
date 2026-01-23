@@ -84,32 +84,32 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-8">
+      <div className="p-4 md:p-8 space-y-8">
         <header className="space-y-2">
-          <Skeleton className="h-10 w-[300px]" />
-          <Skeleton className="h-4 w-[400px]" />
+          <Skeleton className="h-8 md:h-10 w-[200px] md:w-[300px]" />
+          <Skeleton className="h-4 w-full max-w-[400px]" />
         </header>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-32 w-full rounded-[2rem]" />
+            <Skeleton key={i} className="h-28 md:h-32 w-full rounded-[2rem]" />
           ))}
         </div>
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          <Skeleton className="xl:col-span-2 h-[400px] rounded-[2rem]" />
-          <Skeleton className="xl:col-span-1 h-[400px] rounded-[2rem]" />
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
+          <Skeleton className="xl:col-span-2 h-[350px] md:h-[400px] rounded-[2rem]" />
+          <Skeleton className="xl:col-span-1 h-[350px] md:h-[400px] rounded-[2rem]" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-8 space-y-8 animate-in fade-in duration-500">
+    <div className="p-4 md:p-8 space-y-6 md:space-y-8 animate-in fade-in duration-500">
       <header>
-        <h1 className="text-3xl font-black text-slate-900 tracking-tighter">Executive Dashboard</h1>
-        <p className="text-slate-500 font-medium">Real-time financial visibility & predictive analytics.</p>
+        <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter">Executive Dashboard</h1>
+        <p className="text-slate-500 font-medium text-sm md:text-base">Real-time financial visibility & predictive analytics.</p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard label="Total Revenue" value={formatCurrency(metrics.totalRevenue)} icon={<DollarSign className="text-green-600" />} trend="Gross Sales" />
         <StatCard label="Inventory Assets" value={formatCurrency(metrics.totalInventoryValue)} icon={<Package className="text-blue-600" />} trend={formatWeight(metrics.totalWeight)} />
         <StatCard 
@@ -121,58 +121,58 @@ export default function DashboardPage() {
         <StatCard label="Low Stock Alerts" value={metrics.lowStockCount.toString()} icon={<AlertTriangle className="text-red-600" />} alert={metrics.lowStockCount > 0} trend={metrics.lowStockCount > 0 ? "Action Required" : "Healthy"} />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        <div className="xl:col-span-2 space-y-8">
-          <Card title="Revenue Trends" subtitle="Monthly Sales Performance" className="h-[400px] flex flex-col">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
+        <div className="xl:col-span-2 space-y-6 md:space-y-8">
+          <Card title="Revenue Trends" subtitle="Monthly Sales Performance" className="h-[350px] md:h-[400px] flex flex-col">
             <div className="flex-1 min-h-0">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12, fontWeight: 700}} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12, fontWeight: 700}} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} />
                   <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}} />
-                  <Bar dataKey="revenue" fill="#0f172a" radius={[6, 6, 6, 6]} barSize={40} />
+                  <Bar dataKey="revenue" fill="#0f172a" radius={[6, 6, 6, 6]} barSize={32} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </Card>
 
           <Card title="Predictive Inventory" subtitle="Estimated Run-Out Dates">
-             <div className="space-y-6">
+             <div className="space-y-5 md:space-y-6">
                 {burnDownData.length > 0 ? burnDownData.map((item) => (
-                  <div key={item._id} className="space-y-2">
-                     <div className="flex justify-between items-end">
-                        <div>
-                          <span className="font-bold text-slate-900">{item.origin}</span>
-                          <span className="ml-2 text-xs font-medium text-slate-400 uppercase tracking-wider">{item.batchNumber}</span>
-                        </div>
-                        <div className={`text-sm font-black ${item.daysRemaining < 21 ? 'text-red-500' : 'text-slate-700'}`}>
-                           {item.daysRemaining > 365 ? '> 1 Year' : `${Math.floor(item.daysRemaining)} Days Left`}
-                        </div>
-                     </div>
-                     <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full rounded-full transition-all duration-1000 ${item.daysRemaining < 14 ? 'bg-red-500' : item.daysRemaining < 30 ? 'bg-amber-400' : 'bg-green-500'}`}
-                          style={{ width: `${Math.min((item.daysRemaining / 60) * 100, 100)}%` }}
-                        />
-                     </div>
-                  </div>
+                   <div key={item._id} className="space-y-2">
+                      <div className="flex justify-between items-end">
+                         <div className="truncate pr-4">
+                           <span className="font-bold text-slate-900 block md:inline">{item.origin}</span>
+                           <span className="md:ml-2 text-[10px] font-black text-slate-400 uppercase tracking-wider">{item.batchNumber}</span>
+                         </div>
+                         <div className={`text-xs md:text-sm font-black whitespace-nowrap ${item.daysRemaining < 21 ? 'text-red-500' : 'text-slate-700'}`}>
+                            {item.daysRemaining > 365 ? '> 1 Year' : `${Math.floor(item.daysRemaining)} Days Left`}
+                         </div>
+                      </div>
+                      <div className="h-2.5 md:h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+                         <div 
+                           className={`h-full rounded-full transition-all duration-1000 ${item.daysRemaining < 14 ? 'bg-red-500' : item.daysRemaining < 30 ? 'bg-amber-400' : 'bg-green-500'}`}
+                           style={{ width: `${Math.min((item.daysRemaining / 60) * 100, 100)}%` }}
+                         />
+                      </div>
+                   </div>
                 )) : (
-                  <div className="p-8 text-center text-slate-400 text-sm italic">Not enough roast history to predict usage yet.</div>
+                   <div className="p-8 text-center text-slate-400 text-sm italic">Not enough roast history to predict usage yet.</div>
                 )}
              </div>
           </Card>
         </div>
 
         <div className="xl:col-span-1 space-y-6">
-          <div className="bg-slate-900 text-white p-10 rounded-[2rem] flex flex-col justify-between relative overflow-hidden group shadow-2xl min-h-[400px]">
+          <div className="bg-slate-900 text-white p-8 md:p-10 rounded-[2rem] flex flex-col justify-between relative overflow-hidden group shadow-2xl min-h-[300px] md:min-h-[400px]">
             <div className="absolute -top-20 -right-20 w-60 h-60 bg-amber-500 rounded-full blur-[80px] opacity-20 group-hover:opacity-30 transition-opacity" />
             <div className="relative z-10">
-              <div className="flex items-center gap-3 text-amber-500 mb-8 font-black uppercase tracking-[0.2em] text-xs">
+              <div className="flex items-center gap-3 text-amber-500 mb-6 md:mb-8 font-black uppercase tracking-[0.2em] text-[10px]">
                 <Lightbulb size={18} />
                 Virtual CFO Insight
               </div>
-              <h3 className="text-2xl font-bold leading-snug mb-4">
+              <h3 className="text-xl md:text-2xl font-bold leading-snug mb-4">
                 {burnDownData.some(i => i.daysRemaining < 14) ? "Supply Chain Risk Detected." : "Cash flow is healthy."}
               </h3>
               <p className="text-slate-400 text-sm leading-relaxed">

@@ -35,22 +35,22 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-24 px-6 overflow-hidden">
+      <section className="relative pt-20 md:pt-32 pb-16 md:pb-24 px-6 overflow-hidden">
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 rounded-full text-amber-700 text-xs font-black uppercase tracking-widest mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 rounded-full text-amber-700 text-[10px] md:text-xs font-black uppercase tracking-widest mb-6 md:mb-8">
             <TrendingUp size={14} />
             Finance-First Coffee ERP
           </div>
-          <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter mb-8 leading-tight">
-            Cropster controls your roast. <br/>
+          <h1 className="text-4xl md:text-7xl font-black text-slate-900 tracking-tighter mb-6 md:mb-8 leading-tight">
+            Cropster controls your roast. <br className="hidden md:block"/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600">
               We control your bank account.
             </span>
           </h1>
-          <p className="text-xl text-slate-500 font-medium mb-10 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg md:text-xl text-slate-500 font-medium mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed">
             Stop roasting blind. RoasterOS tracks your green inventory, calculates true shrinkage costs, and manages wholesale orders in one unified dashboard.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 px-4 sm:px-0">
             <Link 
               href="/dashboard"
               className="w-full sm:w-auto px-8 py-4 bg-slate-900 text-white text-lg font-bold rounded-2xl hover:bg-slate-800 transition-all shadow-xl hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
@@ -61,7 +61,7 @@ export default function LandingPage() {
               href="/calculator"
               className="w-full sm:w-auto px-8 py-4 bg-white border border-slate-200 text-slate-700 text-lg font-bold rounded-2xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2 hover:shadow-lg"
             >
-              Try Cost Calculator
+              Try Calculator
             </Link>
           </div>
         </div>

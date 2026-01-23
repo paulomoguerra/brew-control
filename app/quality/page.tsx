@@ -7,6 +7,7 @@ import { Award, Loader2, CheckCircle2, TrendingUp, Star, Microscope } from 'luci
 import { useUnits } from '../../lib/units';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis, ReferenceLine } from 'recharts';
 import { Card } from '../../components/ui/Card';
+import { Skeleton } from '../../components/ui/Skeleton';
 
 export default function QualityPage() {
   const { formatCurrency } = useUnits();
@@ -37,6 +38,8 @@ export default function QualityPage() {
     sweetness: 10,
     defects: 0
   });
+
+  const isLoading = recentRoasts === undefined || sessions === undefined;
 
   const totalScore = Object.values(attributes).reduce((a, b) => a + b, 0) - (attributes.defects * 2);
 
@@ -77,20 +80,35 @@ export default function QualityPage() {
     batch: s.roastInfo?.batchId || "?",
   })).filter(d => d.x > 0) || [];
 
+  if (isLoading) {
+    return (
+      <div className="p-4 md:p-8 space-y-8">
+        <header className="space-y-2">
+          <Skeleton className="h-8 md:h-10 w-[200px] md:w-[300px]" />
+          <Skeleton className="h-4 w-full max-w-[400px]" />
+        </header>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+          <Skeleton className="lg:col-span-1 h-[600px] rounded-[2rem]" />
+          <Skeleton className="lg:col-span-2 h-[500px] rounded-[2rem]" />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700 p-8">
+    <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 animate-in fade-in duration-700 p-4 md:p-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tighter">Sensory Lab</h1>
-          <p className="text-slate-500 font-medium">SCA-standard cupping and value analysis.</p>
+          <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter">Sensory Lab</h1>
+          <p className="text-slate-500 font-medium text-sm md:text-base">SCA-standard cupping and value analysis.</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
         {/* Left: Input Form */}
         <div className="lg:col-span-1 space-y-6">
-          <form onSubmit={handleSubmit} className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl space-y-6 relative overflow-hidden">
+          <form onSubmit={handleSubmit} className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 shadow-xl space-y-6 relative overflow-hidden">
              <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
                 <Microscope size={100} />
              </div>
@@ -103,16 +121,19 @@ export default function QualityPage() {
             </div>
 
             <div className="space-y-4 relative z-10">
-              <input 
-                placeholder="Cupper Name" 
-                value={cupperName} 
-                onChange={e => setCupperName(e.target.value)} 
-                className="input-field"
-                required 
-              />
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cupper Name</label>
+                <input 
+                  placeholder="Your Name" 
+                  value={cupperName} 
+                  onChange={e => setCupperName(e.target.value)} 
+                  className="input-field"
+                  required 
+                />
+              </div>
               
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Select Roast Batch</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Roast Batch</label>
                 <select 
                   required
                   value={selectedRoastId}
@@ -129,12 +150,12 @@ export default function QualityPage() {
               </div>
 
               {/* Attributes Grid */}
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 py-2">
                  {['aroma', 'flavor', 'aftertaste', 'acidity', 'body', 'balance'].map((attr) => (
-                   <div key={attr} className="space-y-1">
-                      <div className="flex justify-between">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase">{attr}</label>
-                        <span className="text-[10px] font-black">{attributes[attr as keyof typeof attributes]}</span>
+                   <div key={attr} className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">{attr}</label>
+                        <span className="text-[10px] font-black bg-slate-100 px-2 py-0.5 rounded-full">{attributes[attr as keyof typeof attributes]}</span>
                       </div>
                       <input 
                         type="range" min="6" max="10" step="0.25"
@@ -146,20 +167,23 @@ export default function QualityPage() {
                  ))}
               </div>
 
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
-                 <span className="font-bold text-slate-700">Total Score</span>
-                 <span className={`text-3xl font-black ${totalScore >= 85 ? 'text-amber-500' : totalScore >= 80 ? 'text-slate-700' : 'text-red-500'}`}>
+              <div className="p-4 md:p-5 bg-slate-900 text-white rounded-2xl flex justify-between items-center shadow-lg">
+                 <div className="flex flex-col">
+                   <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Total SCA Score</span>
+                   <span className="text-sm font-medium text-slate-400">Standard Calibration</span>
+                 </div>
+                 <span className={`text-3xl md:text-4xl font-black ${totalScore >= 85 ? 'text-green-400' : totalScore >= 80 ? 'text-amber-400' : 'text-red-400'}`}>
                     {totalScore.toFixed(2)}
                  </span>
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Notes</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Notes & Sensory Experience</label>
                 <textarea 
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
                   rows={2}
-                  placeholder="e.g. Juicy, floral, clean finish..."
+                  placeholder="e.g. Juicy acidity, stone fruit notes..."
                   className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-medium text-sm outline-none focus:ring-4 focus:ring-amber-500/10 transition-all resize-none"
                 />
               </div>
@@ -182,49 +206,51 @@ export default function QualityPage() {
 
         {/* Right: Value Matrix Chart */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm h-[500px] flex flex-col">
-            <div className="mb-6 flex justify-between items-end">
+          <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 shadow-sm min-h-[400px] md:h-[550px] flex flex-col">
+            <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
               <div>
-                <h3 className="text-lg font-black text-slate-800">Value Matrix</h3>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Identify High-Value vs. Low-Value Batches</p>
+                <h3 className="text-lg font-black text-slate-800 tracking-tight">Value Matrix</h3>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Cost vs. Quality Analysis</p>
               </div>
-              <div className="flex gap-4 text-[10px] font-bold uppercase tracking-wider">
-                <div className="flex items-center gap-1 text-green-600"><div className="w-2 h-2 bg-green-500 rounded-full" /> Gems (High Score/Low Cost)</div>
-                <div className="flex items-center gap-1 text-red-500"><div className="w-2 h-2 bg-red-500 rounded-full" /> Drops (Low Score/High Cost)</div>
+              <div className="flex flex-wrap gap-x-4 gap-y-2 text-[9px] font-black uppercase tracking-wider">
+                <div className="flex items-center gap-1.5 text-green-600"><div className="w-2 h-2 bg-green-500 rounded-full" /> Gems (High Value)</div>
+                <div className="flex items-center gap-1.5 text-red-500"><div className="w-2 h-2 bg-red-500 rounded-full" /> Risky (Low Value)</div>
               </div>
             </div>
             
-            <div className="flex-1 w-full min-h-0">
+            <div className="flex-1 w-full min-h-[300px]">
                {scatterData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                     <XAxis 
                       type="number" 
                       dataKey="x" 
                       name="Cost" 
                       unit="$" 
-                      tick={{fontSize: 12, fill: '#94a3b8', fontWeight: 700}}
-                      label={{ value: 'Cost per Lb ($)', position: 'insideBottom', offset: -10, fill: '#94a3b8', fontSize: 10, fontWeight: 900 }} 
+                      tick={{fontSize: 10, fill: '#94a3b8', fontWeight: 700}}
+                      axisLine={false}
+                      tickLine={false}
                     />
                     <YAxis 
                       type="number" 
                       dataKey="y" 
                       name="Score" 
                       domain={[75, 95]} 
-                      tick={{fontSize: 12, fill: '#94a3b8', fontWeight: 700}}
-                      label={{ value: 'SCA Score', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10, fontWeight: 900 }}
+                      tick={{fontSize: 10, fill: '#94a3b8', fontWeight: 700}}
+                      axisLine={false}
+                      tickLine={false}
                     />
-                    <ZAxis type="number" dataKey="z" range={[60, 60]} />
+                    <ZAxis type="number" dataKey="z" range={[80, 80]} />
                     <Tooltip 
                       cursor={{ strokeDasharray: '3 3' }} 
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           const data = payload[0].payload;
                           return (
-                            <div className="bg-slate-900 text-white p-4 rounded-xl shadow-xl border border-slate-700">
-                              <p className="font-bold text-sm mb-1">{data.name}</p>
-                              <div className="flex justify-between gap-4 text-xs font-mono">
+                            <div className="bg-slate-900 text-white p-3 rounded-xl shadow-xl border border-slate-700">
+                              <p className="font-bold text-xs mb-1">{data.name}</p>
+                              <div className="flex justify-between gap-4 text-[10px] font-black uppercase">
                                 <span className="text-amber-400">Score: {data.y}</span>
                                 <span className="text-green-400">Cost: {formatCurrency(data.x)}</span>
                               </div>
@@ -235,9 +261,8 @@ export default function QualityPage() {
                       }}
                     />
                     
-                    {/* Quadrant Lines */}
-                    <ReferenceLine x={12} stroke="#cbd5e1" strokeDasharray="3 3" />
-                    <ReferenceLine y={84} stroke="#cbd5e1" strokeDasharray="3 3" />
+                    <ReferenceLine x={12} stroke="#e2e8f0" strokeWidth={2} />
+                    <ReferenceLine y={84} stroke="#e2e8f0" strokeWidth={2} />
 
                     <Scatter name="Batches" data={scatterData} fill="#0f172a">
                       {scatterData.map((entry, index) => (
