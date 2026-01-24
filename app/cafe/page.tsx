@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { Plus, Trash2, Coffee, DollarSign, Package, ChefHat, Info, X, Calculator, TrendingUp, Settings, Activity, ArrowRight, Wallet, Target, Coins, Lightbulb } from 'lucide-react';
+import { Plus, Trash2, Coffee, DollarSign, Package, ChefHat, Info, X, Calculator, TrendingUp, Settings, Activity, ArrowRight, Wallet, Target, Coins, Lightbulb, Database, Clock, Truck, CheckCircle, Flame } from 'lucide-react';
 import { useUnits } from '../../lib/units';
 import { Card, StatCard } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
@@ -17,7 +17,7 @@ export default function CafePage() {
   const { showToast } = useToast();
   
   // --- DATA ---
-  const now = Date.now();
+  const now = useMemo(() => Date.now(), []);
   const summary = useQuery(api.cafe.getFinancialSummary, { now });
   const settings = useQuery(api.cafe.getSettings);
   const expenses = useQuery(api.cafe.listExpenses);
@@ -69,7 +69,6 @@ export default function CafePage() {
   const handleUpdateMargin = async (id: any, val: number) => {
     try {
        await updateRoastedMargin({ id, targetMargin: val });
-       showToast('Coffee target margin updated', 'success');
     } catch (err) { showToast('Error updating margin', 'error'); }
   };
 
@@ -82,18 +81,18 @@ export default function CafePage() {
           <h1 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase">Cafe Command Center</h1>
           <p className="text-slate-500 font-medium">Real-time retail profitability & overhead management.</p>
         </div>
-        <div className="flex gap-3 w-full md:w-auto">
-           <button onClick={() => setIsAddingIncome(true)} className="flex-1 md:flex-none btn-primary px-6 py-3 flex items-center justify-center gap-2">
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+           <button onClick={() => setIsAddingIncome(true)} className="flex-1 md:flex-none btn-primary px-6 py-4 flex items-center justify-center gap-2 shadow-xl">
               <Plus size={18} /> Record Sales
            </button>
-           <button onClick={() => setIsConfiguring(true)} className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all text-slate-600">
-              <Settings size={20} />
+           <button onClick={() => setIsConfiguring(true)} className="flex-1 md:flex-none bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 flex items-center justify-center gap-2 hover:bg-slate-50 hover:border-slate-300 transition-all text-slate-900 font-black text-xs uppercase tracking-widest shadow-sm">
+              <Settings size={18} className="text-slate-400" /> Configure Economics
            </button>
         </div>
       </header>
 
       {/* Primary Scorecard */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-6">
          <StatCard 
             label="Est. Net Profit" 
             value={formatCurrency(netProfit)} 
@@ -111,7 +110,7 @@ export default function CafePage() {
          />
          <StatCard 
             label="Operating Burden" 
-            value={`${formatPrice(summary.burdenPerKg)}/kg`} 
+            value={formatPrice(summary.burdenPerKg)} 
             icon={<Activity className="text-amber-600" />} 
             trend={summary.isBurdenEnabled ? "ACTIVE" : "DISABLED"}
             alert={!summary.isBurdenEnabled}
@@ -123,6 +122,46 @@ export default function CafePage() {
             icon={<Coins className="text-slate-600" />} 
             trend={`$${summary.burnRatePerDay.toFixed(0)} /day`}
             onClick={() => setActiveMetric('expenses')}
+         />
+         <StatCard 
+            label="Green Assets" 
+            value={formatWeight(summary.totalGreenWeight || 0)} 
+            icon={<Database className="text-emerald-600" />} 
+            trend="Raw Material"
+         />
+         <StatCard 
+            label="Roasted Stock" 
+            value={formatWeight(summary.totalRoastedWeight || 0)} 
+            icon={<Package className="text-orange-600" />} 
+            trend="Finished Goods"
+         />
+      </div>
+
+      {/* Order Status Pipeline */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+         <StatCard 
+            label="Pending Orders" 
+            value={summary.statusCounts?.pending.toString() || "0"} 
+            icon={<Clock className="text-slate-400" />} 
+            trend="Waiting"
+         />
+         <StatCard 
+            label="Roasting" 
+            value={summary.statusCounts?.roasting.toString() || "0"} 
+            icon={<Flame className="text-amber-500" />} 
+            trend="In Oven"
+         />
+         <StatCard 
+            label="Shipped" 
+            value={summary.statusCounts?.shipped.toString() || "0"} 
+            icon={<Truck className="text-blue-500" />} 
+            trend="In Transit"
+         />
+         <StatCard 
+            label="Paid" 
+            value={summary.statusCounts?.paid.toString() || "0"} 
+            icon={<CheckCircle className="text-green-600" />} 
+            trend="Completed"
          />
       </div>
 
@@ -320,9 +359,9 @@ export default function CafePage() {
       )}
 
       {isConfiguring && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-           <Card className="w-full max-w-2xl shadow-2xl animate-in zoom-in-95" title="Operational Parameters" subtitle="Configure global business settings">
-              <div className="space-y-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md overflow-y-auto">
+           <Card className="w-full max-w-3xl shadow-2xl animate-in zoom-in-95 my-auto" title="Operational Parameters" subtitle="Configure global business settings and overhead">
+              <div className="space-y-8 max-h-[80vh] overflow-y-auto pr-2 custom-scrollbar">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Monthly Revenue Goal</label>
@@ -333,31 +372,70 @@ export default function CafePage() {
                        <input type="number" className="input-field" value={settings?.defaultTargetMargin} onChange={(e) => updateSettings({ ...settings, defaultTargetMargin: parseFloat(e.target.value) } as any)} />
                     </div>
                  </div>
+
+                 <div className="pt-6 border-t border-slate-100">
+                    <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-4">Roast Production Rates (Allocation Basis)</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Labor ($/hr)</label>
+                          <input type="number" step="0.50" className="input-field" value={settings?.laborRate} onChange={(e) => updateSettings({ ...settings, laborRate: parseFloat(e.target.value) } as any)} />
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Gas ($/hr)</label>
+                          <input type="number" step="0.50" className="input-field" value={settings?.gasRate} onChange={(e) => updateSettings({ ...settings, gasRate: parseFloat(e.target.value) } as any)} />
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Misc/Facility ($/hr)</label>
+                          <input type="number" step="0.50" className="input-field" value={settings?.utilityRate} onChange={(e) => updateSettings({ ...settings, utilityRate: parseFloat(e.target.value) } as any)} />
+                       </div>
+                    </div>
+                    <p className="mt-4 text-[10px] text-slate-400 font-medium">These rates are used to calculate the "True Cost" of roasted coffee based on machine run-time.</p>
+                 </div>
                  
                  <div className="pt-6 border-t border-slate-100">
-                    <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-4">Add Recurring Expense</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                       <input id="exp-name" placeholder="Name" className="input-field text-sm" />
-                       <input id="exp-cost" type="number" placeholder="Cost" className="input-field text-sm" />
+                    <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-4">Add Recurring Overhead (Fixed Costs)</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                       <input id="exp-name" placeholder="Expense Name" className="input-field text-sm" />
+                       <input id="exp-cost" type="number" placeholder="Amount" className="input-field text-sm" />
                        <select id="exp-cat" className="input-field text-sm">
-                          <option value="fixed">Fixed</option>
-                          <option value="variable">Variable</option>
+                          <option value="fixed">Rent/Fixed</option>
+                          <option value="fixed">Insurance</option>
+                          <option value="fixed">Subscriptions</option>
+                          <option value="fixed">Licenses</option>
+                          <option value="fixed">Marketing</option>
+                          <option value="variable">Utilities</option>
+                          <option value="variable">Maintenance</option>
+                          <option value="variable">Other</option>
                        </select>
                        <button 
                          onClick={async () => {
-                            const name = (document.getElementById('exp-name') as HTMLInputElement).value;
-                            const cost = parseFloat((document.getElementById('exp-cost') as HTMLInputElement).value);
+                            const nameEl = (document.getElementById('exp-name') as HTMLInputElement);
+                            const costEl = (document.getElementById('exp-cost') as HTMLInputElement);
+                            const name = nameEl.value;
+                            const cost = parseFloat(costEl.value);
                             const category = (document.getElementById('exp-cat') as HTMLSelectElement).value as 'fixed' | 'variable';
                             if (name && cost) {
                                await addExpense({ name, cost, category, recurrence: 'monthly' });
                                showToast('Expense added', 'success');
+                               nameEl.value = '';
+                               costEl.value = '';
                             }
                          }}
                          className="btn-primary py-2 text-xs"
-                       >Add</button>
+                       >Add Expense</button>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-2xl">
+                       <p className="text-[10px] text-slate-500 font-bold mb-3 uppercase tracking-widest">Common Micro-Roaster Costs:</p>
+                       <div className="flex flex-wrap gap-2">
+                          {['Rent/Facility', 'Equipment Lease', 'Software (Cropster/POS)', 'GL Insurance', 'Cleaning Services', 'Marketing/SEO'].map(suggest => (
+                            <button key={suggest} onClick={() => {(document.getElementById('exp-name') as HTMLInputElement).value = suggest}} className="px-3 py-1 bg-white border border-slate-200 rounded-full text-[10px] font-bold text-slate-600 hover:border-amber-500 transition-colors">
+                               + {suggest}
+                            </button>
+                          ))}
+                       </div>
                     </div>
                  </div>
-                 <button onClick={() => setIsConfiguring(false)} className="w-full btn-secondary py-4 font-black uppercase text-xs tracking-[0.2em]">Close Settings</button>
+                 <button onClick={() => setIsConfiguring(false)} className="w-full btn-secondary py-4 font-black uppercase text-xs tracking-[0.2em] sticky bottom-0">Close Settings</button>
               </div>
            </Card>
         </div>

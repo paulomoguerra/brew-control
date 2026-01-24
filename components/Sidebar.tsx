@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Coffee, LayoutDashboard, Database, Flame, Award, BookOpen, Settings, Store, Package, X } from "lucide-react";
+import { Coffee, LayoutDashboard, Database, Flame, Award, BookOpen, Settings, Store, Package, X, Calculator } from "lucide-react";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -26,9 +26,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     {
       title: "Production & Quality",
       items: [
-        { href: "/inventory", label: "Green Inventory", icon: <Database size={20} /> },
         { href: "/roast", label: "Production Hub", icon: <Flame size={20} /> },
+        { href: "/inventory", label: "Green Inventory", icon: <Database size={20} /> },
+        { href: "/inventory/roasted", label: "Roasted Inventory", icon: <Package size={20} /> },
         { href: "/quality", label: "Quality Control", icon: <Award size={20} /> },
+        { href: "/calculator", label: "Calculator", icon: <Calculator size={20} /> },
       ]
     },
   ];

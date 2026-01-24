@@ -31,22 +31,28 @@ export function StatCard({ label, value, icon, trend, alert, onClick }: any) {
   return (
     <div 
       onClick={onClick}
-      className={`bg-white p-5 md:p-6 rounded-[2rem] border ${alert ? 'border-red-200 bg-red-50' : 'border-slate-200'} shadow-sm transition-all hover:shadow-lg ${onClick ? 'cursor-pointer active:scale-95 group' : ''}`}
+      className={`bg-white p-8 rounded-[3rem] border ${alert ? 'border-red-200 bg-red-50' : 'border-slate-200'} shadow-sm transition-all hover:shadow-xl flex flex-col items-center text-center h-full group ${onClick ? 'cursor-pointer active:scale-95' : ''}`}
     >
-      <div className="flex justify-between items-start mb-4">
-        <div className={`p-2 md:p-3 rounded-xl border ${alert ? 'bg-white border-red-100' : 'bg-slate-50 border-slate-100'} ${onClick ? 'group-hover:bg-amber-50 group-hover:border-amber-100 transition-colors' : ''}`}>
-          {icon}
+      <div className={`w-14 h-14 md:w-16 md:h-16 flex items-center justify-center rounded-[1.25rem] border mb-6 ${alert ? 'bg-white border-red-100' : 'bg-slate-50 border-slate-100'} ${onClick ? 'group-hover:bg-amber-50 group-hover:border-amber-100 transition-colors' : ''}`}>
+        {icon}
+      </div>
+      
+      <div className="flex-1 flex flex-col items-center justify-center space-y-1">
+        <div className="text-2xl md:text-3xl font-black text-slate-900 leading-none tracking-tighter">
+          {value}
         </div>
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] leading-tight pb-2">
+          {label}
+        </div>
+        
         {trend && (
-          <span className={`text-[10px] font-black uppercase tracking-wider px-2 md:px-3 py-1 rounded-full ${alert ? 'bg-red-200 text-red-700' : 'bg-slate-100 text-slate-500'}`}>
-            {trend}
-          </span>
+          <div className="pt-2">
+            <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${alert ? 'bg-red-200 text-red-700' : 'bg-slate-100 text-slate-500'} whitespace-nowrap`}>
+              {trend}
+            </span>
+          </div>
         )}
       </div>
-      <div className="text-2xl md:text-3xl font-black text-slate-900 mb-1 tracking-tight">
-        {value}
-      </div>
-      <div className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest">{label}</div>
     </div>
   );
 }

@@ -70,6 +70,10 @@ export default defineSchema({
     totalAmount: v.number(),
     orderDate: v.number(),
     itemCount: v.number(),
+    statusHistory: v.optional(v.array(v.object({
+      status: v.string(),
+      timestamp: v.number(),
+    }))),
   }).index("by_date", ["orderDate"]),
 
   // 7. Order Items (Line Items)
@@ -78,7 +82,7 @@ export default defineSchema({
     productId: v.id("roastedInventory"),
     quantity: v.number(),
     priceAtTime: v.number(),
-  }),
+  }).index("by_order", ["orderId"]),
 
   // 8. Cafe Ingredients (Non-Coffee Costs)
   ingredients: defineTable({
@@ -140,6 +144,10 @@ export default defineSchema({
     defaultTargetMargin: v.optional(v.number()),
     taxRate: v.optional(v.number()),
     isBurdenEnabled: v.optional(v.boolean()),
+    // Production Rates
+    laborRate: v.optional(v.number()), // $/hr
+    gasRate: v.optional(v.number()),   // $/hr
+    utilityRate: v.optional(v.number()), // $/hr
   }),
 
   // 13. Operating Expenses (The Burden Ledger)

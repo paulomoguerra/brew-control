@@ -4,22 +4,42 @@ import { mutation, query } from "./_generated/server";
 // --- Settings ---
 
 export const getSettings = query({
+  args: {},
   handler: async (ctx) => {
     try {
       const settings = await ctx.db.query("cafeSettings").first();
+
+      if (!settings) {
+        return {
+          monthlyRevenueGoal: 15000,
+          defaultTargetMargin: 75,
+          taxRate: 8,
+          isBurdenEnabled: false,
+          laborRate: 25.00,
+          gasRate: 4.50,
+          utilityRate: 1.50
+        };
+      }
+
       return {
-        monthlyRevenueGoal: settings?.monthlyRevenueGoal ?? 15000,
-        defaultTargetMargin: settings?.defaultTargetMargin ?? 75,
-        taxRate: settings?.taxRate ?? 8,
-        isBurdenEnabled: settings?.isBurdenEnabled ?? false,
-        _id: settings?._id
+        monthlyRevenueGoal: settings.monthlyRevenueGoal ?? 15000,
+        defaultTargetMargin: settings.defaultTargetMargin ?? 75,
+        taxRate: settings.taxRate ?? 8,
+        isBurdenEnabled: settings.isBurdenEnabled ?? false,
+        laborRate: settings.laborRate ?? 25.00,
+        gasRate: settings.gasRate ?? 4.50,
+        utilityRate: settings.utilityRate ?? 1.50
       };
     } catch (e) {
+      console.error("Error fetching settings:", e);
       return {
         monthlyRevenueGoal: 15000,
         defaultTargetMargin: 75,
         taxRate: 8,
-        isBurdenEnabled: false
+        isBurdenEnabled: false,
+        laborRate: 25.00,
+        gasRate: 4.50,
+        utilityRate: 1.50
       };
     }
   }
@@ -27,17 +47,29 @@ export const getSettings = query({
 
 export const updateSettings = mutation({
   args: {
-    monthlyRevenueGoal: v.number(),
-    defaultTargetMargin: v.number(),
-    taxRate: v.number(),
-    isBurdenEnabled: v.boolean(),
+    monthlyRevenueGoal: v.optional(v.number()),
+    defaultTargetMargin: v.optional(v.number()),
+    taxRate: v.optional(v.number()),
+    isBurdenEnabled: v.optional(v.boolean()),
+    laborRate: v.optional(v.number()),
+    gasRate: v.optional(v.number()),
+    utilityRate: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db.query("cafeSettings").first();
     if (existing) {
       await ctx.db.patch(existing._id, args);
     } else {
-      await ctx.db.insert("cafeSettings", args);
+      await ctx.db.insert("cafeSettings", {
+        monthlyRevenueGoal: 15000,
+        defaultTargetMargin: 75,
+        taxRate: 8,
+        isBurdenEnabled: false,
+        laborRate: 25.00,
+        gasRate: 4.50,
+        utilityRate: 1.50,
+        ...args
+      });
     }
   }
 });
@@ -109,51 +141,85 @@ export const getFinancialSummary = query({
   args: { now: v.number() },
   handler: async (ctx, args) => {
     try {
-      const settings = await ctx.db.query("cafeSettings").first();
-      const revenueGoal = settings?.monthlyRevenueGoal ?? 15000;
-      const isBurdenEnabled = settings?.isBurdenEnabled ?? false;
+      // 1. Get Settings
+      const settingsDoc = await ctx.db.query("cafeSettings").first();
+      // Default values if settings document doesn't exist
+      let revenueGoal = settingsDoc?.monthlyRevenueGoal ?? 15000;
+      const isBurdenEnabled = settingsDoc?.isBurdenEnabled ?? false;
 
+      // 2. Calculate Monthly Overhead
+      const expenses = await ctx.db.query("operatingExpenses").collect();
+      let monthlyOverhead = expenses.reduce((sum, e) => sum + e.cost, 0);
+      let burnRatePerDay = monthlyOverhead / 30;
+
+      // 3. Calculate Income (MTD)
       const date = new Date(args.now);
       const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1).getTime();
+      
+      // Note: In a larger app, we'd use a range index here. For now, filter in memory.
+      const incomeLog = await ctx.db.query("dailyIncome").collect();
+      let totalIncome = incomeLog
+        .filter(i => i.date >= startOfMonth)
+        .reduce((sum, i) => sum + i.amount, 0);
 
-      // 1. Income this month
-      const allIncome = await ctx.db.query("dailyIncome").collect();
-      const incomeThisMonth = (allIncome || []).filter((i) => (i.date || 0) >= startOfMonth);
-      const totalIncome = incomeThisMonth.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+      // 4. Calculate Burden Per Kg (Allocation)
+      // We need total roasted weight for the current month to amortize overhead
+      const roastLogs = await ctx.db.query("roastLogs").collect();
+      const monthlyRoastWeight = roastLogs
+        .filter(r => r.roastDate >= startOfMonth)
+        .reduce((sum, r) => sum + r.roastedWeightOut, 0);
 
-      // 2. Expenses
-      const allExpenses = await ctx.db.query("operatingExpenses").collect();
-      const monthlyOverhead = (allExpenses || []).reduce((acc, curr) => {
-        const cost = curr.cost || 0;
-        if (curr.recurrence === "monthly") return acc + cost;
-        if ((curr.date || 0) >= startOfMonth) return acc + cost;
-        return acc;
-      }, 0);
+      const totalRoastedWeight = (await ctx.db.query("roastedInventory").collect())
+        .reduce((sum, r) => sum + r.quantityLbs, 0);
+      
+      const totalGreenWeight = (await ctx.db.query("greenInventory").collect())
+        .reduce((sum, g) => sum + g.quantityLbs, 0);
 
-      // 3. Burden Math
-      const allRoasts = await ctx.db.query("roastLogs").collect();
-      const roastsThisMonth = (allRoasts || []).filter((r) => (r.roastDate || 0) >= startOfMonth);
-      const totalWeightRoastedLbs = roastsThisMonth.reduce((acc, curr) => acc + (curr.roastedWeightOut || 0), 0);
-      const totalWeightKg = totalWeightRoastedLbs * 0.453592;
-      const burdenPerKg = totalWeightKg > 0 ? (monthlyOverhead / totalWeightKg) : 0;
+      // 5. Order Status Counts
+      const allOrders = await ctx.db.query("orders").collect();
+      const statusCounts = {
+        pending: allOrders.filter(o => o.status === 'pending').length,
+        roasting: allOrders.filter(o => o.status === 'roasting').length,
+        shipped: allOrders.filter(o => o.status === 'shipped').length,
+        paid: allOrders.filter(o => o.status === 'paid').length,
+      };
+
+      // Avoid division by zero
+      let burdenPerKg = 0;
+      if (monthlyRoastWeight > 0) {
+        burdenPerKg = monthlyOverhead / (monthlyRoastWeight * 0.453592);
+      }
+      
+      // Safety check for Infinity/NaN
+      if (!Number.isFinite(burdenPerKg)) burdenPerKg = 0;
+      if (!Number.isFinite(monthlyOverhead)) monthlyOverhead = 0;
+      if (!Number.isFinite(totalIncome)) totalIncome = 0;
+      if (!Number.isFinite(revenueGoal)) revenueGoal = 15000;
+      if (!Number.isFinite(burnRatePerDay)) burnRatePerDay = 0;
 
       return {
-        totalIncome: Number.isFinite(totalIncome) ? totalIncome : 0,
-        monthlyOverhead: Number.isFinite(monthlyOverhead) ? monthlyOverhead : 0,
-        revenueGoal: Number.isFinite(revenueGoal) ? revenueGoal : 15000,
-        burdenPerKg: Number.isFinite(burdenPerKg) ? burdenPerKg : 0,
-        isBurdenEnabled: !!isBurdenEnabled,
-        burnRatePerDay: Number.isFinite(monthlyOverhead / 30) ? (monthlyOverhead / 30) : 0
+        totalIncome,
+        monthlyOverhead,
+        revenueGoal,
+        burdenPerKg,
+        isBurdenEnabled,
+        burnRatePerDay,
+        totalRoastedWeight,
+        totalGreenWeight,
+        statusCounts
       };
-    } catch (err) {
-      console.error("Summary Error", err);
+    } catch (e) {
+      console.error("Error calculating financial summary:", e);
       return {
         totalIncome: 0,
         monthlyOverhead: 0,
         revenueGoal: 15000,
         burdenPerKg: 0,
         isBurdenEnabled: false,
-        burnRatePerDay: 0
+        burnRatePerDay: 0,
+        totalRoastedWeight: 0,
+        totalGreenWeight: 0,
+        statusCounts: { pending: 0, roasting: 0, shipped: 0, paid: 0 }
       };
     }
   }

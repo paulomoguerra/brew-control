@@ -10,6 +10,7 @@
 
 import type * as cafe from "../cafe.js";
 import type * as clients from "../clients.js";
+import type * as init from "../init.js";
 import type * as inventory from "../inventory.js";
 import type * as orders from "../orders.js";
 import type * as quality from "../quality.js";
@@ -25,6 +26,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   cafe: typeof cafe;
   clients: typeof clients;
+  init: typeof init;
   inventory: typeof inventory;
   orders: typeof orders;
   quality: typeof quality;

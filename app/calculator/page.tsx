@@ -1,182 +1,223 @@
 "use client";
 
-import React, { useState } from 'react';
-import { DollarSign, Percent, Truck, Mail, Calculator, TrendingUp, AlertCircle } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Calculator, Scale, Percent, DollarSign, ArrowRight, RotateCcw, Info, TrendingUp, ShoppingBag, Coffee, TrendingDown } from 'lucide-react';
+import { Card } from '../../components/ui/Card';
 import { useUnits } from '../../lib/units';
 
-export default function CalculatorPage() {
-  const { unit, formatCurrency } = useUnits();
+export default function CoffeeCalculator() {
+  const { unit, formatPrice, formatCurrency } = useUnits();
   
-  const [inputs, setInputs] = useState({
-    greenCost: 5.00,
-    shrinkage: 18.0,
-    shipping: 0.50,
-    email: ''
-  });
+  // --- ROAST PLANNING CALCULATOR ---
+  const [targetRoasted, setTargetRoasted] = useState<string>('5');
+  const [expectedShrinkage, setExpectedShrinkage] = useState<string>('15');
+  const [greenCost, setGreenCost] = useState<string>('6.50');
+  const [overheadPerHour, setOverheadPerHour] = useState<string>('30');
+  const [roastTime, setRoastTime] = useState<string>('12');
 
-  const [result, setResult] = useState<number | null>(null);
-  const [isCalculating, setIsCalculating] = useState(false);
-  const [showResult, setShowResult] = useState(false);
+  const roastMath = useMemo(() => {
+    const tr = parseFloat(targetRoasted) || 0;
+    const es = parseFloat(expectedShrinkage) || 0;
+    const gc = parseFloat(greenCost) || 0;
+    const oh = parseFloat(overheadPerHour) || 0;
+    const rt = parseFloat(roastTime) || 0;
 
-  const handleCalculate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsCalculating(true);
+    if (tr <= 0 || es >= 100) return null;
 
-    // Mock delay for "Crunching Numbers" effect
-    await new Promise(resolve => setTimeout(resolve, 600));
+    const greenRequired = tr / (1 - (es / 100));
+    const greenTotalCost = greenRequired * gc;
+    const timeOverhead = (rt / 60) * oh;
+    const totalBatchCost = greenTotalCost + timeOverhead;
+    const costPerRoastedUnit = totalBatchCost / tr;
 
-    const shrinkageFactor = 1 - (inputs.shrinkage / 100);
-    const roastedCost = shrinkageFactor > 0 
-      ? (inputs.greenCost + inputs.shipping) / shrinkageFactor 
-      : 0;
+    return {
+      greenRequired,
+      totalBatchCost,
+      costPerRoastedUnit,
+      timeOverhead,
+      shrinkageLbs: greenRequired - tr
+    };
+  }, [targetRoasted, expectedShrinkage, greenCost, overheadPerHour, roastTime]);
 
-    setResult(roastedCost);
-    setShowResult(true);
-    setIsCalculating(false);
-  };
+  // --- BREW RATIO CALCULATOR ---
+  const [coffeeGrams, setCoffeeGrams] = useState<string>('20');
+  const [ratio, setRatio] = useState<string>('16');
+  const [waterVolume, setWaterVolume] = useState<string>('320');
+  const [calcMode, setCalcMode] = useState<'coffee' | 'water'>('coffee');
 
-  const isCostHigher = result !== null && result > inputs.greenCost;
+  const brewMath = useMemo(() => {
+    const cg = parseFloat(coffeeGrams) || 0;
+    const r = parseFloat(ratio) || 0;
+    const wv = parseFloat(waterVolume) || 0;
+
+    if (calcMode === 'coffee') {
+      return { waterNeeded: cg * r, coffeeNeeded: cg };
+    } else {
+      return { waterNeeded: wv, coffeeNeeded: r > 0 ? wv / r : 0 };
+    }
+  }, [coffeeGrams, ratio, waterVolume, calcMode]);
 
   return (
-    <div className="max-w-6xl mx-auto py-6 md:py-8 px-4 md:px-8 animate-in fade-in duration-700">
-      <div className="mb-8 md:mb-12">
-        <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight mb-3 md:mb-4">
-          Cost Calculator ({unit.toUpperCase()})
-        </h1>
-        <p className="text-slate-500 text-base md:text-lg max-w-2xl">
-          Calculate your <span className="text-slate-900 font-bold">True Roasted Cost</span> by factoring in moisture loss and landed shipping expenses.
-        </p>
+    <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8 animate-in fade-in duration-500">
+      <header>
+        <h1 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase">Universal Calculator</h1>
+        <p className="text-slate-500 font-medium">Precision tools for roasting economics and brewing science.</p>
+      </header>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        {/* ROASTING ECONOMICS */}
+        <div className="space-y-6">
+          <Card title="Roast Economics" subtitle="Reverse engineering batch costs">
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Target Output ({unit})</label>
+                  <input type="number" value={targetRoasted} onChange={e => setTargetRoasted(e.target.value)} className="input-field bg-slate-50 border-none" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Exp. Shrinkage (%)</label>
+                  <input type="number" value={expectedShrinkage} onChange={e => setExpectedShrinkage(e.target.value)} className="input-field bg-slate-50 border-none" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Green Cost</label>
+                  <input type="number" value={greenCost} onChange={e => setGreenCost(e.target.value)} className="input-field bg-slate-50 border-none" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Overhead/hr</label>
+                  <input type="number" value={overheadPerHour} onChange={e => setOverheadPerHour(e.target.value)} className="input-field bg-slate-50 border-none" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Time (min)</label>
+                  <input type="number" value={roastTime} onChange={e => setRoastTime(e.target.value)} className="input-field bg-slate-50 border-none" />
+                </div>
+              </div>
+
+              {roastMath && (
+                <div className="mt-8 p-8 bg-slate-900 rounded-[2.5rem] text-white relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+                    <TrendingUp size={100} />
+                  </div>
+                  <div className="relative z-10 space-y-6">
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <span className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em]">Green Required</span>
+                        <div className="text-4xl font-black mt-1">{roastMath.greenRequired.toFixed(2)} <span className="text-lg text-slate-500 uppercase">{unit}</span></div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Shrinkage Loss</span>
+                        <div className="font-bold text-slate-300">{roastMath.shrinkageLbs.toFixed(2)} {unit}</div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-800">
+                      <div>
+                        <span className="text-[10px] font-black text-slate-500 uppercase block mb-1">True Production Cost</span>
+                        <div className="text-2xl font-black text-amber-500">{formatPrice(roastMath.costPerRoastedUnit)} <span className="text-xs uppercase text-slate-500">/{unit}</span></div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] font-black text-slate-500 uppercase block mb-1">Total Batch Basis</span>
+                        <div className="text-2xl font-black">{formatCurrency(roastMath.totalBatchCost)}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
+
+        {/* BREW RATIO & EXTRACTION */}
+        <div className="space-y-6">
+          <Card title="Brewing Science" subtitle="Precision ratio scaling">
+            <div className="space-y-8">
+              <div className="flex bg-slate-100 p-1 rounded-2xl w-fit">
+                <button 
+                  onClick={() => setCalcMode('coffee')}
+                  className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${calcMode === 'coffee' ? 'bg-white shadow-md text-slate-900' : 'text-slate-500'}`}
+                >
+                  Scale by Coffee
+                </button>
+                <button 
+                  onClick={() => setCalcMode('water')}
+                  className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${calcMode === 'water' ? 'bg-white shadow-md text-slate-900' : 'text-slate-500'}`}
+                >
+                  Scale by Water
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Brew Ratio (1 : X)</label>
+                  <div className="flex items-center gap-4">
+                    <input type="range" min="10" max="20" step="0.5" value={ratio} onChange={e => setRatio(e.target.value)} className="flex-1 h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-amber-500" />
+                    <span className="w-12 text-center font-black text-slate-900">1:{ratio}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {calcMode === 'coffee' ? (
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Coffee Dose (g)</label>
+                      <input type="number" value={coffeeGrams} onChange={e => setCoffeeGrams(e.target.value)} className="input-field bg-slate-50 border-none text-xl font-bold" />
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Water Volume (ml/g)</label>
+                      <input type="number" value={waterVolume} onChange={e => setWaterVolume(e.target.value)} className="input-field bg-slate-50 border-none text-xl font-bold" />
+                    </div>
+                  )}
+                  
+                  <div className="bg-slate-50 rounded-[2rem] p-6 flex items-center justify-center border-2 border-dashed border-slate-200">
+                    <div className="text-center">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Required {calcMode === 'coffee' ? 'Water' : 'Coffee'}</span>
+                      <div className="text-3xl font-black text-slate-900">
+                        {calcMode === 'coffee' ? `${brewMath.waterNeeded.toFixed(0)}ml` : `${brewMath.coffeeNeeded.toFixed(1)}g`}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Common Presets */}
+                <div className="pt-6 border-t border-slate-100">
+                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-4">Ratio Presets</span>
+                   <div className="flex flex-wrap gap-2">
+                      {[
+                        { label: 'Espresso (1:2)', val: '2' },
+                        { label: 'Strong Pour Over (1:15)', val: '15' },
+                        { label: 'Golden Ratio (1:16.6)', val: '16.6' },
+                        { label: 'Cupping (1:18)', val: '18' }
+                      ].map(p => (
+                        <button key={p.val} onClick={() => setRatio(p.val)} className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:border-amber-500 hover:text-amber-500 transition-all">
+                          {p.label}
+                        </button>
+                      ))}
+                   </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-start">
-        {/* Inputs */}
-        <section className="bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden">
-          <div className="p-6 md:p-8 border-b border-slate-100 bg-slate-50/50">
-            <h2 className="text-lg md:text-xl font-bold text-slate-800 flex items-center gap-2">
-              <Calculator className="text-amber-500" size={24} />
-              Input Parameters
-            </h2>
-          </div>
-          <form onSubmit={handleCalculate} className="p-6 md:p-8 space-y-6">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Green Cost (per {unit})</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400">
-                    <DollarSign size={16} />
-                  </div>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={inputs.greenCost}
-                    onChange={(e) => setInputs({ ...inputs, greenCost: parseFloat(e.target.value) || 0 })}
-                    className="input-field pl-12"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Shrinkage (%)</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400">
-                    <Percent size={16} />
-                  </div>
-                  <input
-                    type="number"
-                    step="0.1"
-                    required
-                    value={inputs.shrinkage}
-                    onChange={(e) => setInputs({ ...inputs, shrinkage: parseFloat(e.target.value) || 0 })}
-                    className="input-field pl-12"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Shipping & Landed (per {unit})</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400">
-                    <Truck size={16} />
-                  </div>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={inputs.shipping}
-                    onChange={(e) => setInputs({ ...inputs, shipping: parseFloat(e.target.value) || 0 })}
-                    className="input-field pl-12"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isCalculating}
-              className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] disabled:opacity-50"
-            >
-              {isCalculating ? "Crunching..." : "Calculate True Cost"}
-              <TrendingUp size={20} />
-            </button>
-          </form>
-        </section>
-
-        {/* Results */}
-        <section className="space-y-8">
-          {showResult && result !== null ? (
-            <div className="bg-white rounded-[2rem] border border-slate-200 shadow-2xl p-6 md:p-10 animate-in zoom-in-95 duration-500">
-              <div className="text-center mb-8">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-4">True Roasted Cost per {unit}</span>
-                <div className={`text-5xl md:text-7xl font-black tracking-tighter transition-colors ${isCostHigher ? 'text-red-600' : 'text-slate-900'}`}>
-                  {formatCurrency(result)}
-                </div>
-                {isCostHigher && (
-                  <div className="mt-6 p-4 bg-red-50 rounded-2xl border border-red-100 flex items-start gap-3 text-left">
-                    <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
-                    <p className="text-red-700 font-bold text-xs md:text-sm leading-snug">
-                      Hidden Loss Alert: Your cost is {( (result / inputs.greenCost - 1) * 100 ).toFixed(1)}% higher than your green price due to shrinkage.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-8">
-                <div className="p-4 bg-slate-50 rounded-2xl">
-                  <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Green Total</span>
-                  <div className="text-lg md:text-xl font-bold text-slate-800">{formatCurrency(inputs.greenCost + inputs.shipping)}</div>
-                </div>
-                <div className="p-4 bg-slate-50 rounded-2xl">
-                  <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Moisture Loss</span>
-                  <div className="text-lg md:text-xl font-bold text-red-500">-{inputs.shrinkage}%</div>
-                </div>
-              </div>
-
-              <div className="mt-8 space-y-4">
-                <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest text-center">Break-Even Pricing Guide</h3>
-                <div className="grid grid-cols-1 gap-3">
-                  <div className="flex justify-between items-center p-4 bg-slate-900 text-white rounded-2xl">
-                    <span className="font-bold text-xs md:text-sm">Wholesale (35% Margin)</span>
-                    <span className="text-lg md:text-xl font-black text-amber-400">{formatCurrency(result / 0.65)}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-4 bg-amber-500 text-slate-900 rounded-2xl">
-                    <span className="font-bold text-xs md:text-sm">Retail (50% Margin)</span>
-                    <span className="text-lg md:text-xl font-black">{formatCurrency(result / 0.50)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-slate-100 rounded-[2rem] border-2 border-dashed border-slate-200 p-8 md:p-12 flex flex-col items-center justify-center text-center opacity-60 h-[400px] md:h-[500px]">
-              <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mb-6">
-                <Calculator className="text-slate-400" size={32} />
-              </div>
-              <p className="text-slate-500 font-bold max-w-xs text-sm md:text-base">
-                Enter your batch stats on the left to reveal your actual unit economics.
-              </p>
-            </div>
-          )}
-        </section>
+      {/* QUICK CONVERSIONS */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+         {[
+           { label: '1 kg', val: '2.204 lbs' },
+           { label: '1 lb', val: '453.6 g' },
+           { label: '1 oz', val: '28.35 g' },
+           { label: '1 gal', val: '3.785 L' }
+         ].map((c, i) => (
+           <div key={i} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center">
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">{c.label}</span>
+              <ArrowRight size={14} className="text-slate-300" />
+              <span className="font-bold text-slate-900">{c.val}</span>
+           </div>
+         ))}
       </div>
     </div>
   );

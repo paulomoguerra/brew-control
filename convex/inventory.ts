@@ -69,8 +69,44 @@ export const updateRoastedMargin = mutation({
 export const listRoasted = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query("roastedInventory")
-      .filter((q) => q.neq(q.field("status"), "out_of_stock"))
-      .collect();
+    return await ctx.db.query("roastedInventory").collect();
+  },
+});
+
+export const addRoasted = mutation({
+  args: {
+    productName: v.string(),
+    quantityLbs: v.number(),
+    costPerLb: v.number(),
+    wholesalePricePerLb: v.number(),
+    targetMargin: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.insert("roastedInventory", {
+      ...args,
+      status: args.quantityLbs <= 0 ? "out_of_stock" : args.quantityLbs < 5 ? "low_stock" : "available",
+    });
+  },
+});
+
+export const editRoasted = mutation({
+  args: {
+    id: v.id("roastedInventory"),
+    productName: v.optional(v.string()),
+    quantityLbs: v.optional(v.number()),
+    costPerLb: v.optional(v.number()),
+    wholesalePricePerLb: v.optional(v.number()),
+    targetMargin: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const { id, ...updates } = args;
+    await ctx.db.patch(id, updates);
+  },
+});
+
+export const removeRoasted = mutation({
+  args: { id: v.id("roastedInventory") },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.id);
   },
 });

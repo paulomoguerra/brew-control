@@ -63,7 +63,6 @@ export default function InventoryPage() {
           costPerLb: costPerLb,
           shippingCost: shipping,
           taxCost: tax,
-          initialQuantityLbs: quantityLbs
         } as any);
         showToast('Batch added successfully', 'success');
       }

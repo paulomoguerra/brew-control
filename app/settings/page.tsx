@@ -1,125 +1,99 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Save, Loader2, DollarSign, Zap, Flame, Users, Info } from 'lucide-react';
+import React, { useState } from 'react';
+import { Save, Settings2, Monitor, Bell, Globe, Shield } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { useToast } from '../../components/ui/Toast';
 
 export default function SettingsPage() {
   const { showToast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [config, setConfig] = useState({
-    laborRate: 25.00, // $/hr
-    gasRate: 4.50,    // $/hr (Estimated burn)
-    utilityRate: 1.50 // $/hr (Electric/Rent allocation)
+  
+  const [preferences, setPreferences] = useState({
+    appearance: 'light',
+    notifications: true,
+    language: 'English',
+    currency: 'USD'
   });
 
-  useEffect(() => {
-    const saved = localStorage.getItem('roasteros-config');
-    if (saved) {
-      try {
-        setConfig(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse config", e);
-      }
-    }
-    setLoading(false);
-  }, []);
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    // Mock delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-    localStorage.setItem('roasteros-config', JSON.stringify(config));
-    showToast('Operational rates saved locally', 'success');
-    setSaving(false);
+  const handleSave = () => {
+    showToast('Preferences updated', 'success');
   };
-
-  if (loading) return <div className="flex justify-center p-12 md:p-20"><Loader2 className="animate-spin text-slate-400" size={32} /></div>;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 md:space-y-8 animate-in fade-in duration-700 p-4 md:p-8">
       <div>
-        <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter">Operational Settings</h1>
-        <p className="text-slate-500 font-medium text-sm md:text-base">Define your overhead costs to improve True Cost accuracy.</p>
+        <h1 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase">App Configuration</h1>
+        <p className="text-slate-500 font-medium">Manage your personal preferences and interface settings.</p>
       </div>
 
-      <form onSubmit={handleSave}>
-        <Card title="Fixed Cost Allocation (Hourly)" subtitle="These rates are applied to roast duration">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-            
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="bg-blue-100 p-2 rounded-lg text-blue-600"><Users size={18} /></div>
-                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Labor Rate ($/hr)</label>
-              </div>
-              <div className="relative">
-                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
-                 <input 
-                   type="number" step="0.50" required 
-                   value={config.laborRate}
-                   onChange={e => setConfig({...config, laborRate: parseFloat(e.target.value) || 0})}
-                   className="input-field pl-8"
-                 />
-              </div>
-              <p className="text-[10px] text-slate-400 leading-relaxed font-medium">Head roaster hourly wage + burden.</p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="bg-red-100 p-2 rounded-lg text-red-600"><Flame size={18} /></div>
-                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Gas Rate ($/hr)</label>
-              </div>
-              <div className="relative">
-                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
-                 <input 
-                   type="number" step="0.10" required 
-                   value={config.gasRate}
-                   onChange={e => setConfig({...config, gasRate: parseFloat(e.target.value) || 0})}
-                   className="input-field pl-8"
-                 />
-              </div>
-              <p className="text-[10px] text-slate-400 leading-relaxed font-medium">Avg propane/natural gas consumption.</p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="bg-amber-100 p-2 rounded-lg text-amber-600"><Zap size={18} /></div>
-                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Utility/Rent ($/hr)</label>
-              </div>
-              <div className="relative">
-                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
-                 <input 
-                   type="number" step="0.10" required 
-                   value={config.utilityRate}
-                   onChange={e => setConfig({...config, utilityRate: parseFloat(e.target.value) || 0})}
-                   className="input-field pl-8"
-                 />
-              </div>
-              <p className="text-[10px] text-slate-400 leading-relaxed font-medium">Electricity & facility allocation.</p>
-            </div>
-
-          </div>
-
-          <div className="mt-8 pt-8 border-t border-slate-100">
-             <div className="flex items-start gap-4 bg-slate-50 p-4 md:p-6 rounded-2xl mb-6 border border-slate-100">
-                <Info className="text-amber-500 shrink-0 mt-0.5" size={20} />
-                <p className="text-xs md:text-sm text-slate-500 leading-relaxed">
-                   <strong className="text-slate-900 block mb-1">How this works:</strong> 
-                   If your total hourly rate is <span className="text-slate-900 font-bold">${(config.laborRate + config.gasRate + config.utilityRate).toFixed(2)}/hr</span>, 
-                   a 15-minute roast will add <span className="text-slate-900 font-bold">${((config.laborRate + config.gasRate + config.utilityRate) * 0.25).toFixed(2)}</span> of overhead to the production cost.
-                </p>
+      <div className="grid grid-cols-1 gap-6">
+        <Card title="Display & Language" subtitle="Visual experience settings">
+          <div className="space-y-6">
+             <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                <div className="flex items-center gap-4">
+                   <div className="p-3 bg-white rounded-xl shadow-sm text-slate-600"><Monitor size={20}/></div>
+                   <div>
+                      <div className="font-bold text-slate-900">Appearance</div>
+                      <div className="text-xs text-slate-500">System default or custom theme</div>
+                   </div>
+                </div>
+                <select className="input-field w-32" value={preferences.appearance} onChange={e => setPreferences({...preferences, appearance: e.target.value})}>
+                   <option value="light">Light</option>
+                   <option value="dark">Dark</option>
+                   <option value="system">System</option>
+                </select>
              </div>
-             
-             <button type="submit" disabled={saving} className="btn-primary w-full md:w-auto flex items-center gap-2 justify-center py-4 px-8">
-               {saving ? <Loader2 className="animate-spin" /> : <Save size={20} />}
-               Save Operational Rates
+
+             <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                <div className="flex items-center gap-4">
+                   <div className="p-3 bg-white rounded-xl shadow-sm text-slate-600"><Globe size={20}/></div>
+                   <div>
+                      <div className="font-bold text-slate-900">Default Currency</div>
+                      <div className="text-xs text-slate-500">Used for all financial reports</div>
+                   </div>
+                </div>
+                <select className="input-field w-32" value={preferences.currency} onChange={e => setPreferences({...preferences, currency: e.target.value})}>
+                   <option value="USD">USD ($)</option>
+                   <option value="BRL">BRL (R$)</option>
+                   <option value="EUR">EUR (€)</option>
+                </select>
+             </div>
+
+             <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                <div className="flex items-center gap-4">
+                   <div className="p-3 bg-white rounded-xl shadow-sm text-slate-600"><Bell size={20}/></div>
+                   <div>
+                      <div className="font-bold text-slate-900">Notifications</div>
+                      <div className="text-xs text-slate-500">Low stock and order alerts</div>
+                   </div>
+                </div>
+                <button 
+                  onClick={() => setPreferences({...preferences, notifications: !preferences.notifications})}
+                  className={`w-12 h-6 rounded-full transition-all relative ${preferences.notifications ? 'bg-amber-500' : 'bg-slate-200'}`}
+                >
+                   <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${preferences.notifications ? 'left-7' : 'left-1'}`} />
+                </button>
+             </div>
+          </div>
+          
+          <div className="mt-8 pt-8 border-t border-slate-100">
+             <button onClick={handleSave} className="btn-primary px-8 py-3 flex items-center gap-2">
+                <Save size={18} /> Save Preferences
              </button>
           </div>
         </Card>
-      </form>
+
+        <Card title="Security & API" subtitle="Platform integration access">
+           <div className="space-y-4">
+              <div className="p-6 border-2 border-dashed border-slate-100 rounded-[2rem] text-center">
+                 <Shield className="mx-auto text-slate-300 mb-4" size={32} />
+                 <h4 className="font-bold text-slate-900 mb-1">Advanced Settings Protected</h4>
+                 <p className="text-xs text-slate-500 max-w-xs mx-auto mb-6">Database migrations and API keys require administrator elevation.</p>
+                 <button className="text-xs font-black text-amber-600 uppercase tracking-widest hover:text-amber-700 transition-colors">Request Access</button>
+              </div>
+           </div>
+        </Card>
+      </div>
     </div>
   );
 }
