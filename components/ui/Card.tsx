@@ -38,10 +38,10 @@ export function StatCard({ label, value, icon, trend, alert, onClick }: any) {
       </div>
       
       <div className="flex-1 flex flex-col items-center justify-center space-y-1">
-        <div className="text-2xl md:text-3xl font-black text-slate-900 leading-none tracking-tighter">
+        <div className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 leading-none tracking-tighter">
           {value}
         </div>
-        <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] leading-tight pb-2">
+        <div className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-tight pb-1">
           {label}
         </div>
         

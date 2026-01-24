@@ -232,11 +232,11 @@ export default function DashboardPage() {
         <p className="text-slate-500 font-medium text-sm md:text-base">Real-time financial visibility & predictive analytics.</p>
       </header>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard label="Total Revenue" value={formatCurrency(metrics.totalRevenue)} icon={<DollarSign className="text-green-600" />} trend="Gross Sales" onClick={() => setActiveMetric('revenue')} />
-        <StatCard label="Inventory Assets" value={formatCurrency(metrics.totalInventoryValue)} icon={<Package className="text-blue-600" />} trend={formatWeight(metrics.totalWeight)} onClick={() => setActiveMetric('inventory')} />
-        <StatCard label="Avg. Roast Margin" value={`${metrics.avgRoastMargin.toFixed(1)}%`} icon={<TrendingUp className="text-amber-600" />} trend="Above Target" onClick={() => setActiveMetric('margin')} />
-        <StatCard label="Low Stock Alerts" value={metrics.lowStockCount.toString()} icon={<AlertTriangle className="text-red-600" />} alert={metrics.lowStockCount > 0} trend="Action Required" onClick={() => setActiveMetric('low_stock')} />
+        <StatCard label="Assets" value={formatCurrency(metrics.totalInventoryValue)} icon={<Package className="text-blue-600" />} trend={formatWeight(metrics.totalWeight)} onClick={() => setActiveMetric('inventory')} />
+        <StatCard label="Margin" value={`${metrics.avgRoastMargin.toFixed(1)}%`} icon={<TrendingUp className="text-amber-600" />} trend="Avg." onClick={() => setActiveMetric('margin')} />
+        <StatCard label="Alerts" value={metrics.lowStockCount.toString()} icon={<AlertTriangle className="text-red-600" />} alert={metrics.lowStockCount > 0} trend="Low Stock" onClick={() => setActiveMetric('low_stock')} />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">

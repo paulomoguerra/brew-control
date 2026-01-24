@@ -124,7 +124,7 @@ export default function RoastedInventoryPage() {
       </header>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard 
           label="Roasted Assets" 
           value={formatWeight(totalWeight)} 
@@ -135,15 +135,17 @@ export default function RoastedInventoryPage() {
           label="Wholesale Value" 
           value={formatCurrency(totalValue)} 
           icon={<DollarSign className="text-green-600" />} 
-          trend="Projected Revenue"
+          trend="Projected"
         />
-        <StatCard 
-          label="Stock Alerts" 
-          value={lowStock.toString()} 
-          icon={<AlertTriangle className="text-amber-600" />} 
-          alert={lowStock > 0}
-          trend={lowStock > 0 ? "Critically Low" : "Stable"}
-        />
+        <div className="col-span-2 lg:col-span-1">
+          <StatCard 
+            label="Stock Alerts" 
+            value={lowStock.toString()} 
+            icon={<AlertTriangle className="text-amber-600" />} 
+            alert={lowStock > 0}
+            trend={lowStock > 0 ? "Critically Low" : "Stable"}
+          />
+        </div>
       </div>
 
       <Card title="Product Manifesto" subtitle="Active roasted coffee stock">

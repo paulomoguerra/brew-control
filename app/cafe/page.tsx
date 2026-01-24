@@ -92,9 +92,9 @@ export default function CafePage() {
       </header>
 
       {/* Primary Scorecard */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-6">
          <StatCard 
-            label="Est. Net Profit" 
+            label="Net Profit" 
             value={formatCurrency(netProfit)} 
             icon={<Wallet className="text-green-600" />} 
             trend={netProfit > 0 ? "Profitable" : "Under Water"}
@@ -102,14 +102,14 @@ export default function CafePage() {
             onClick={() => setActiveMetric('profit')}
          />
          <StatCard 
-            label="Revenue vs Goal" 
+            label="Goal Progress" 
             value={`${goalProgress.toFixed(1)}%`} 
             icon={<Target className="text-blue-600" />} 
             trend={formatCurrency(summary.totalIncome)}
             onClick={() => setActiveMetric('goal')}
          />
          <StatCard 
-            label="Operating Burden" 
+            label="Op. Burden" 
             value={formatPrice(summary.burdenPerKg)} 
             icon={<Activity className="text-amber-600" />} 
             trend={summary.isBurdenEnabled ? "ACTIVE" : "DISABLED"}
@@ -117,7 +117,7 @@ export default function CafePage() {
             onClick={() => setActiveMetric('burden')}
          />
          <StatCard 
-            label="Monthly Overhead" 
+            label="Overhead" 
             value={formatCurrency(summary.monthlyOverhead)} 
             icon={<Coins className="text-slate-600" />} 
             trend={`$${summary.burnRatePerDay.toFixed(0)} /day`}
@@ -133,14 +133,14 @@ export default function CafePage() {
             label="Roasted Stock" 
             value={formatWeight(summary.totalRoastedWeight || 0)} 
             icon={<Package className="text-orange-600" />} 
-            trend="Finished Goods"
+            trend="Finished"
          />
       </div>
 
       {/* Order Status Pipeline */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
          <StatCard 
-            label="Pending Orders" 
+            label="Pending" 
             value={summary.statusCounts?.pending.toString() || "0"} 
             icon={<Clock className="text-slate-400" />} 
             trend="Waiting"
@@ -155,7 +155,7 @@ export default function CafePage() {
             label="Shipped" 
             value={summary.statusCounts?.shipped.toString() || "0"} 
             icon={<Truck className="text-blue-500" />} 
-            trend="In Transit"
+            trend="Transit"
          />
          <StatCard 
             label="Paid" 

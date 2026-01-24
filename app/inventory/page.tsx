@@ -108,7 +108,7 @@ export default function InventoryPage() {
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 p-4 md:p-8">
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
         <StatCard 
           label="Total Weight" 
           value={formatWeight(totalWeightLbs)} 
@@ -121,13 +121,15 @@ export default function InventoryPage() {
           icon={<DollarSign size={20} className="text-green-600" />} 
           trend="Live Valuation"
         />
-        <StatCard 
-          label="Low Stock Alerts" 
-          value={lowStockCount.toString()} 
-          icon={<AlertTriangle size={20} className="text-amber-600" />} 
-          alert={lowStockCount > 0}
-          trend={lowStockCount > 0 ? "Reorder Needed" : "Healthy"}
-        />
+        <div className="col-span-2 md:col-span-1">
+          <StatCard 
+            label="Low Stock Alerts" 
+            value={lowStockCount.toString()} 
+            icon={<AlertTriangle size={20} className="text-amber-600" />} 
+            alert={lowStockCount > 0}
+            trend={lowStockCount > 0 ? "Reorder Needed" : "Healthy"}
+          />
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
