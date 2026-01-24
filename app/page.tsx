@@ -2,229 +2,273 @@
 
 import React from "react";
 import Link from "next/link";
-import { Coffee, TrendingUp, ShieldCheck, ArrowRight, CheckCircle2, XCircle } from "lucide-react";
+import { 
+  Coffee, 
+  LayoutDashboard, 
+  ShoppingBag, 
+  Book, 
+  Flame, 
+  Database, 
+  Award, 
+  Calculator, 
+  Settings,
+  ArrowRight,
+  TrendingUp,
+  QrCode,
+  CheckCircle2,
+  Zap,
+  LayoutGrid,
+  Users
+} from "lucide-react";
+import { useUnits } from "../lib/units";
+
+const PlanFeature = ({ text }: { text: string }) => (
+  <li className="flex items-center gap-3">
+    <div className="bg-green-100 text-green-600 p-0.5 rounded-full flex-shrink-0">
+      <CheckCircle2 size={14} />
+    </div>
+    <span className="text-xs font-bold text-slate-600">{text}</span>
+  </li>
+);
 
 export default function LandingPage() {
-  
+  const { t, formatCurrency } = useUnits();
+
+  const sections = [
+    {
+      title: "Executive Dashboard",
+      desc: "Real-time financial visibility, predictive analytics, and consistency tracking.",
+      icon: <LayoutDashboard size={40} className="text-blue-500" />,
+      href: "/dashboard"
+    },
+    {
+      title: "Client Intelligence",
+      desc: "Predictive CRM for wholesale partners. Stock alerts and order suggestions.",
+      icon: <Users size={40} className="text-purple-500" />,
+      href: "/clients"
+    },
+    {
+      title: "Sales Hub",
+      desc: "Multi-channel distribution, B2B order orchestration, and revenue tracking.",
+      icon: <ShoppingBag size={40} className="text-orange-500" />,
+      href: "/sales"
+    },
+
+    {
+      title: "Sales Hub",
+      desc: "Multi-channel distribution, B2B order orchestration, and revenue tracking.",
+      icon: <ShoppingBag size={40} className="text-orange-500" />,
+      href: "/sales"
+    },
+    {
+      title: "Brewing Lab",
+      desc: "Precision recipes, expert tips, and a digital whiteboard for your cafe floor.",
+      icon: <Book size={40} className="text-amber-600" />,
+      href: "/recipes"
+    },
+    {
+      title: "Production Hub",
+      desc: "Log roast batches, track shrinkage, and calculate true production costs per unit.",
+      icon: <Flame size={40} className="text-red-500" />,
+      href: "/roast"
+    },
+    {
+      title: "Green Inventory",
+      desc: "Raw stock management with automated burn-down charts and reorder alerts.",
+      icon: <Database size={40} className="text-emerald-500" />,
+      href: "/inventory"
+    },
+    {
+      title: "Sensory Lab",
+      desc: "SCA-standard cupping sessions, searchable flavor wheel, and quality analysis.",
+      icon: <Award size={40} className="text-purple-500" />,
+      href: "/quality"
+    },
+    {
+      title: "Public Traceability",
+      desc: "Generate QR codes for your bags. Share the story of the bean with your customers.",
+      icon: <QrCode size={40} className="text-pink-500" />,
+      href: "/traceability"
+    },
+    {
+      title: "Precision Tools",
+      desc: "Advanced brewing science and roasting economics calculators.",
+      icon: <Calculator size={40} className="text-slate-600" />,
+      href: "/calculator"
+    },
+    {
+      title: "App Configuration",
+      desc: "Manage localization, currency, units, and external ERP integration settings.",
+      icon: <Settings size={40} className="text-slate-400" />,
+      href: "/settings"
+    }
+  ];
+
   return (
-    <div className="bg-white">
-      {/* Navbar */}
-      <nav className="border-b border-slate-100 sticky top-0 bg-white/80 backdrop-blur-md z-50">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-amber-500 p-2 rounded-xl text-slate-900">
-              <Coffee size={24} />
+    <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans pb-20">
+      {/* Top Navbar */}
+      <nav className="border-b border-slate-200 bg-white">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="bg-amber-500 p-1.5 rounded-lg text-slate-900">
+              <Coffee size={20} />
             </div>
-            <span className="text-xl font-black tracking-tight text-slate-900">RoasterOS</span>
+            <span className="text-lg font-black tracking-tight uppercase italic text-slate-900">RoasterOS</span>
           </div>
-          <div className="flex items-center gap-4">
-            <Link 
-              href="/dashboard"
-              className="text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              Sign In
+          <div className="flex items-center gap-6">
+            <Link href="/dashboard" className="text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors">
+              Help
             </Link>
-            <Link 
-              href="/dashboard"
-              className="px-6 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20"
-            >
-              Get Started
+            <Link href="/settings" className="text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors">
+              Account
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="relative pt-20 md:pt-32 pb-16 md:pb-24 px-6 overflow-hidden">
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 rounded-full text-amber-700 text-[10px] md:text-xs font-black uppercase tracking-widest mb-6 md:mb-8">
-            <TrendingUp size={14} />
-            Finance-First Coffee ERP
-          </div>
-          <h1 className="text-4xl md:text-7xl font-black text-slate-900 tracking-tighter mb-6 md:mb-8 leading-tight">
-            Cropster controls your roast. <br className="hidden md:block"/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600">
-              We control your bank account.
-            </span>
-          </h1>
-          <p className="text-lg md:text-xl text-slate-500 font-medium mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed">
-            Stop roasting blind. RoasterOS tracks your green inventory, calculates true shrinkage costs, and manages wholesale orders in one unified dashboard.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 px-4 sm:px-0">
-            <Link 
-              href="/dashboard"
-              className="w-full sm:w-auto px-8 py-4 bg-slate-900 text-white text-lg font-bold rounded-2xl hover:bg-slate-800 transition-all shadow-xl hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
-            >
-              Start Free Trial <ArrowRight size={20} />
-            </Link>
-            <Link 
-              href="/calculator"
-              className="w-full sm:w-auto px-8 py-4 bg-white border border-slate-200 text-slate-700 text-lg font-bold rounded-2xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2 hover:shadow-lg"
-            >
-              Try Calculator
-            </Link>
-          </div>
-        </div>
+      {/* Main Content */}
+      <main className="max-w-6xl mx-auto px-6 py-12 md:py-16">
         
-        {/* Abstract Background Element */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-tr from-amber-200/40 to-orange-100/40 rounded-full blur-[100px] -z-10" />
-      </section>
-
-      {/* Value Props Grid */}
-      <section className="py-24 bg-slate-50 border-y border-slate-200">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-4">Why Roasters Switch</h2>
-            <p className="text-slate-500 max-w-xl mx-auto">Most micro-roasters fail because they don't know their margins. We fix that.</p>
+        {/* BIG CARD: MEMBERSHIP & PLANS (Now at the top) */}
+        <div className="mb-16">
+          <div className="mb-8">
+            <h1 className="text-3xl font-black tracking-tighter text-slate-900 italic uppercase">Roaster Command Center</h1>
+            <p className="text-slate-500 font-medium mt-1">Scale your production with precision-engineered tools.</p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <FeatureCard 
-              icon={<ShieldCheck size={32} className="text-blue-500" />}
-              title="True Cost Tracking"
-              desc="We factor in moisture loss (shrinkage), shipping, and labor to tell you exactly what that bag of coffee costs."
-            />
-            <FeatureCard 
-              icon={<TrendingUp size={32} className="text-green-500" />}
-              title="Predictive Inventory"
-              desc="Never run out of green coffee. Our burn-down charts predict exactly when you'll need to reorder based on production velocity."
-            />
-            <FeatureCard 
-              icon={<Coffee size={32} className="text-amber-500" />}
-              title="Wholesale Portal"
-              desc="Give your cafes a professional login to order beans. Inventory is deducted automatically as orders are placed."
-            />
-          </div>
-        </div>
-      </section>
 
-      {/* Pricing Section */}
-      <section className="py-24 px-6 bg-white" id="pricing">
-        <div className="max-w-7xl mx-auto">
-           <div className="text-center mb-16 max-w-2xl mx-auto">
-             <h2 className="text-4xl font-black text-slate-900 tracking-tight mb-4">Simple, Transparent Pricing</h2>
-             <p className="text-slate-500 font-medium text-lg">
-               Start for free, upgrade as you grow. We only make money when you make money.
-             </p>
-           </div>
+          <div className="border border-slate-200 rounded-[2rem] bg-white shadow-sm overflow-hidden">
+            <div className="bg-slate-900 p-8 md:p-12 text-white">
+                <div className="flex items-center gap-3 text-amber-500 mb-4 font-black uppercase tracking-[0.2em] text-xs">
+                  <Zap size={20} /> Membership & Growth Plans
+                </div>
+                <h2 className="text-3xl md:text-4xl font-black tracking-tighter uppercase italic">Scale your roastery with RoasterOS</h2>
+                <p className="text-slate-400 mt-4 max-w-2xl font-medium text-lg">Choose the right plan for your current production volume. Upgrade or downgrade at any time as your business evolves.</p>
+            </div>
 
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-             
-             {/* Tier 1: Hobbyist */}
-             <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-lg transition-all">
-                <div className="mb-4">
-                  <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Hobbyist</span>
-                </div>
-                <div className="flex items-baseline gap-1 mb-2">
-                   <span className="text-4xl font-black text-slate-900 tracking-tighter">Free</span>
-                </div>
-                <p className="text-slate-500 font-medium mb-8 text-sm">For home roasters perfecting their craft.</p>
-                <Link href="/dashboard" className="block w-full py-3 bg-slate-100 text-slate-900 font-bold rounded-xl hover:bg-slate-200 transition-colors text-center mb-8">
-                  Get Started
-                </Link>
-                <ul className="space-y-3">
-                  <PricingCheck text="Roast Logging" />
-                  <PricingCheck text="Recipe Library" />
-                  <PricingCheck text="Community Access" />
-                  <li className="flex items-center gap-3 opacity-50">
-                    <div className="text-slate-300"><XCircle size={16} /></div>
-                    <span className="font-medium text-slate-400 text-sm decoration-slate-300">Inventory Tracking</span>
-                  </li>
-                  <li className="flex items-center gap-3 opacity-50">
-                     <div className="text-slate-300"><XCircle size={16} /></div>
-                     <span className="font-medium text-slate-400 text-sm decoration-slate-300">Wholesale Portal</span>
-                  </li>
-                </ul>
-             </div>
-
-             {/* Tier 2: Starter */}
-             <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-lg transition-all relative">
-                <div className="mb-4">
-                  <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Starter</span>
-                </div>
-                <div className="flex items-baseline gap-1 mb-2">
-                   <span className="text-4xl font-black text-slate-900 tracking-tighter">$29</span>
-                   <span className="text-slate-400 font-medium">/mo</span>
-                </div>
-                <p className="text-slate-500 font-medium mb-8 text-sm">For garage startups processing &lt;500lbs.</p>
-                <Link href="/dashboard" className="block w-full py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors text-center mb-8">
-                  Start Free Trial
-                </Link>
-                <ul className="space-y-3">
-                  <PricingCheck text="Green Inventory Management" />
-                  <PricingCheck text="Roast Production Logs" />
-                  <PricingCheck text="Basic Cost Calculator" />
-                  <PricingCheck text="500 lbs/mo Limit" />
-                  <li className="flex items-center gap-3 opacity-50">
-                     <div className="text-slate-300"><XCircle size={16} /></div>
-                     <span className="font-medium text-slate-400 text-sm decoration-slate-300">Wholesale Portal</span>
-                  </li>
-                </ul>
-             </div>
-
-             {/* Tier 3: Pro (Highlighted) */}
-             <div className="bg-slate-900 text-white p-8 rounded-[2rem] shadow-2xl relative overflow-hidden transform md:-translate-y-4 border border-slate-700">
-                <div className="absolute top-0 right-0 p-8 opacity-10">
-                   <Coffee size={120} />
-                </div>
-                <div className="relative z-10">
-                  <div className="mb-4 flex justify-between items-center">
-                    <span className="bg-amber-500 text-slate-900 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Pro</span>
-                    <span className="text-amber-500 text-xs font-bold uppercase tracking-widest">Best Value</span>
+            <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+                {/* hobbyist */}
+                <div className="p-8 md:p-10 space-y-8">
+                  <div>
+                      <h3 className="text-xl font-black uppercase tracking-tight text-slate-900">Hobbyist</h3>
+                      <div className="flex items-baseline gap-1 mt-2">
+                        <span className="text-4xl font-black text-slate-900">Free</span>
+                      </div>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-4 italic">Perfect for home labs</p>
                   </div>
-                  <div className="flex items-baseline gap-1 mb-2">
-                     <span className="text-5xl font-black tracking-tighter">$79</span>
-                     <span className="text-slate-400 font-medium">/mo</span>
-                  </div>
-                  <p className="text-slate-400 font-medium mb-8 text-sm">For micro-roasteries scaling up.</p>
-                  <Link href="/dashboard" className="block w-full py-4 bg-amber-500 text-slate-900 font-bold rounded-xl hover:bg-amber-400 transition-colors text-center mb-8 shadow-lg shadow-amber-500/20">
-                    Get Full Access
-                  </Link>
-                  <ul className="space-y-3">
-                    <PricingCheck text="Unlimited Inventory & Roasting" light />
-                    <PricingCheck text="Wholesale Order Portal" light />
-                    <PricingCheck text="QuickBooks & Shopify Sync" light />
-                    <PricingCheck text="Advanced Unit Economics" light />
-                    <PricingCheck text="Multi-User Admin" light />
+                  <ul className="space-y-4">
+                      <PlanFeature text="Roast Logging" />
+                      <PlanFeature text="Recipe Library" />
+                      <PlanFeature text="Basic Calculator" />
                   </ul>
+                  <button className="w-full py-4 border-2 border-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all">Current Plan</button>
                 </div>
-             </div>
 
-           </div>
+                {/* starter */}
+                <div className="p-8 md:p-10 space-y-8 bg-slate-50/30">
+                  <div>
+                      <h3 className="text-xl font-black uppercase tracking-tight text-slate-900">Starter</h3>
+                      <div className="flex items-baseline gap-1 mt-2">
+                        <span className="text-4xl font-black text-slate-900">$29</span>
+                        <span className="text-slate-400 font-bold">/mo</span>
+                      </div>
+                      <p className="text-xs font-bold text-amber-600 uppercase tracking-widest mt-4 italic">For garage startups</p>
+                  </div>
+                  <ul className="space-y-4">
+                      <PlanFeature text="Inventory Tracking" />
+                      <PlanFeature text="True Cost Analysis" />
+                      <PlanFeature text="Wholesale Orders" />
+                      <PlanFeature text="500 lbs/mo Limit" />
+                  </ul>
+                  <button className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 shadow-xl transition-all">Upgrade to Starter</button>
+                </div>
+
+                {/* pro */}
+                <div className="p-8 md:p-10 space-y-8">
+                  <div>
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-xl font-black uppercase tracking-tight text-slate-900">Pro</h3>
+                        <span className="bg-amber-500 text-slate-900 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest">Power User</span>
+                      </div>
+                      <div className="flex items-baseline gap-1 mt-2">
+                        <span className="text-4xl font-black text-slate-900">$79</span>
+                        <span className="text-slate-400 font-bold">/mo</span>
+                      </div>
+                      <p className="text-xs font-bold text-purple-600 uppercase tracking-widest mt-4 italic">High volume roasteries</p>
+                  </div>
+                  <ul className="space-y-4">
+                      <PlanFeature text="ERP Integrations (Bling, Shopify)" />
+                      <PlanFeature text="Public Traceability Pages" />
+                      <PlanFeature text="Advanced Unit Economics" />
+                      <PlanFeature text="Unlimited Production" />
+                      <PlanFeature text="Multi-User Access" />
+                  </ul>
+                  <button className="w-full py-4 bg-amber-500 text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-amber-400 shadow-lg shadow-amber-500/20 transition-all">Get Pro Access</button>
+                </div>
+            </div>
+          </div>
         </div>
-      </section>
+
+        {/* Command Center Grid (Now at the bottom) */}
+        <div className="mb-10">
+          <div className="flex items-center gap-3 mb-6">
+            <LayoutGrid size={24} className="text-slate-400" />
+            <h2 className="text-2xl font-black tracking-tight text-slate-900 uppercase italic">Command Center Modules</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {sections.map((section, idx) => (
+              <Link 
+                key={idx} 
+                href={section.href}
+                className="flex items-start gap-5 p-6 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-all group shadow-sm hover:shadow-md"
+              >
+                <div className="shrink-0 pt-1">
+                  {section.icon}
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-amber-600 transition-colors">
+                    {section.title}
+                  </h3>
+                  <p className="text-sm text-slate-500 leading-relaxed font-medium">
+                    {section.desc}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Action Banner */}
+        <div className="mt-16 p-8 bg-slate-100 rounded-[2rem] border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex items-center gap-6">
+            <div className="p-5 bg-white rounded-3xl shadow-sm"><TrendingUp size={32} className="text-slate-900" /></div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Need Enterprise Solutions?</h2>
+              <p className="text-slate-500 font-medium">Custom API access and dedicated support for multi-location roasteries.</p>
+            </div>
+          </div>
+          <Link 
+            href="/dashboard" 
+            className="whitespace-nowrap bg-white border-2 border-slate-900 text-slate-900 px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-50 transition-all active:scale-95"
+          >
+            Contact Sales
+          </Link>
+        </div>
+      </main>
 
       {/* Footer */}
-      <footer className="bg-slate-50 py-12 border-t border-slate-200">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-3 opacity-50">
-            <div className="bg-slate-900 p-1.5 rounded-lg text-white">
-              <Coffee size={16} />
-            </div>
-            <span className="font-black tracking-tight text-slate-900">RoasterOS</span>
+      <footer className="border-t border-slate-100 py-12 mt-12 bg-slate-50/50">
+        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-2 opacity-50 grayscale">
+            <Coffee size={16} />
+            <span className="font-black tracking-tight text-xs uppercase italic">RoasterOS Inc.</span>
           </div>
-          <p className="text-slate-400 text-sm font-medium">
-            © 2024 RoasterOS Inc. Built for profit-first roasters.
-          </p>
+          <div className="flex gap-8 text-[10px] font-black uppercase tracking-widest text-slate-400">
+            <a href="#" className="hover:text-slate-900 transition-colors">Terms of Service</a>
+            <a href="#" className="hover:text-slate-900 transition-colors">Privacy Policy</a>
+            <a href="#" className="hover:text-slate-900 transition-colors">Support</a>
+          </div>
         </div>
       </footer>
     </div>
   );
 }
-
-const FeatureCard = ({ icon, title, desc }: any) => (
-  <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
-    <div className="mb-6 p-4 bg-slate-50 rounded-2xl w-fit border border-slate-100">{icon}</div>
-    <h3 className="text-xl font-black text-slate-900 mb-3">{title}</h3>
-    <p className="text-slate-500 leading-relaxed font-medium text-sm">{desc}</p>
-  </div>
-);
-
-const PricingCheck = ({ text, light }: { text: string, light?: boolean }) => (
-  <div className="flex items-center gap-3">
-    <div className={`${light ? 'bg-white/10 text-amber-500' : 'bg-green-50 text-green-600'} p-1 rounded-full`}>
-      <CheckCircle2 size={14} />
-    </div>
-    <span className={`font-bold text-sm ${light ? 'text-slate-200' : 'text-slate-700'}`}>{text}</span>
-  </div>
-);

@@ -3,55 +3,96 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 type Unit = 'lbs' | 'kg';
-type Currency = 'USD' | 'BRL';
+type Currency = 'USD' | 'BRL' | 'CAD';
+type Language = 'en' | 'pt-BR';
+type Theme = 'light' | 'dark';
 
-interface UnitContextType {
+interface ConfigContextType {
   unit: Unit;
   currency: Currency;
-  toggleUnit: () => void;
-  toggleCurrency: () => void;
-  // Converts DB value (lbs) to UI value (lbs or kg)
+  language: Language;
+  theme: Theme;
+  setUnit: (u: Unit) => void;
+  setCurrency: (c: Currency) => void;
+  setLanguage: (l: Language) => void;
+  setTheme: (t: Theme) => void;
+  t: (key: string) => string;
+  // Weight & Price helpers
   toDisplayWeight: (lbs: number) => number;
-  // Converts UI input (lbs or kg) to DB value (lbs)
   toStorageWeight: (input: number) => number;
-  // Formats weight with unit label
   formatWeight: (lbs: number) => string;
-  // Converts price/lb to price/unit
   toDisplayPrice: (pricePerLb: number) => number;
-  // Formats price with currency and unit
   formatPrice: (pricePerLb: number) => string;
-  // General currency formatter
   formatCurrency: (value: number) => string;
   label: string;
 }
 
-const UnitContext = createContext<UnitContextType | undefined>(undefined);
+const ConfigContext = createContext<ConfigContextType | undefined>(undefined);
+
+import en from '../locales/en.json';
+import pt from '../locales/pt.json';
+
+const translations: any = {
+  en,
+  'pt-BR': pt
+};
 
 export function UnitProvider({ children }: { children: React.ReactNode }) {
-  const [unit, setUnit] = useState<Unit>('kg');
-  const [currency, setCurrency] = useState<Currency>('BRL');
+  const [unit, setUnitState] = useState<Unit>('kg');
+  const [currency, setCurrencyState] = useState<Currency>('BRL');
+  const [language, setLanguageState] = useState<Language>('en');
+  const [theme, setThemeState] = useState<Theme>('light');
 
   useEffect(() => {
     const savedUnit = localStorage.getItem('roasteros-unit') as Unit || 'kg';
     const savedCurrency = localStorage.getItem('roasteros-currency') as Currency || 'BRL';
-    setUnit(savedUnit);
-    setCurrency(savedCurrency);
+    const savedLanguage = localStorage.getItem('roasteros-language') as Language || 'en';
+    const savedTheme = localStorage.getItem('roasteros-theme') as Theme || 'light';
+    
+    setUnitState(savedUnit);
+    setCurrencyState(savedCurrency);
+    setLanguageState(savedLanguage);
+    setThemeState(savedTheme);
+
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   }, []);
 
-  const toggleUnit = () => {
-    setUnit(prev => {
-      const newVal = prev === 'lbs' ? 'kg' : 'lbs';
-      localStorage.setItem('roasteros-unit', newVal);
-      return newVal;
-    });
+  const setUnit = (u: Unit) => {
+    setUnitState(u);
+    localStorage.setItem('roasteros-unit', u);
   };
 
-  const toggleCurrency = () => {
-    setCurrency(prev => {
-      const newVal = prev === 'USD' ? 'BRL' : 'USD';
-      localStorage.setItem('roasteros-currency', newVal);
-      return newVal;
-    });
+  const setCurrency = (c: Currency) => {
+    setCurrencyState(c);
+    localStorage.setItem('roasteros-currency', c);
+  };
+
+  const setLanguage = (l: Language) => {
+    setLanguageState(l);
+    localStorage.setItem('roasteros-language', l);
+  };
+
+  const setTheme = (t: Theme) => {
+    setThemeState(t);
+    localStorage.setItem('roasteros-theme', t);
+    if (t === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
+  const t = (key: string) => {
+    const keys = key.split('.');
+    let value = translations[language];
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return value || key;
   };
 
   const LBS_TO_KG = 0.45359237;
@@ -70,7 +111,7 @@ export function UnitProvider({ children }: { children: React.ReactNode }) {
   };
 
   const formatCurrency = (value: number) => {
-    const locale = currency === 'USD' ? 'en-US' : 'pt-BR';
+    const locale = currency === 'BRL' ? 'pt-BR' : 'en-US';
     return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: currency,
@@ -88,11 +129,16 @@ export function UnitProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <UnitContext.Provider value={{
+    <ConfigContext.Provider value={{
       unit,
       currency,
-      toggleUnit,
-      toggleCurrency,
+      language,
+      theme,
+      setUnit,
+      setCurrency,
+      setLanguage,
+      setTheme,
+      t,
       toDisplayWeight,
       toStorageWeight,
       formatWeight,
@@ -102,12 +148,12 @@ export function UnitProvider({ children }: { children: React.ReactNode }) {
       label: unit
     }}>
       {children}
-    </UnitContext.Provider>
+    </ConfigContext.Provider>
   );
 }
 
 export const useUnits = () => {
-  const context = useContext(UnitContext);
+  const context = useContext(ConfigContext);
   if (!context) throw new Error("useUnits must be used within UnitProvider");
   return context;
 };

@@ -33,6 +33,7 @@ export const logSession = mutation({
     cleanCup: v.number(),
     sweetness: v.number(),
     defects: v.optional(v.number()),
+    flavors: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
     await ctx.db.insert("cuppingSessions", {

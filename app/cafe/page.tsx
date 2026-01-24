@@ -12,6 +12,60 @@ import { useToast } from '../../components/ui/Toast';
 
 type CafeMetricType = 'profit' | 'goal' | 'burden' | 'expenses' | null;
 
+const PortfolioRow = ({ bean, settings, formatPrice, formatWeight, updateRoastedMargin }: any) => {
+  const [localMargin, setLocalMargin] = useState(bean.targetMargin || settings?.defaultTargetMargin || 75);
+  
+  // Update local state immediately for smooth UI
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalMargin(parseInt(e.target.value));
+  };
+
+  // Sync with DB only when the user finishes sliding
+  const handleCommit = async () => {
+    if (localMargin !== bean.targetMargin) {
+      try {
+        await updateRoastedMargin({ id: bean._id, targetMargin: localMargin });
+      } catch (err) {
+        console.error("Error updating margin", err);
+      }
+    }
+  };
+
+  const targetPrice = bean.costPerLb / (1 - (localMargin / 100));
+
+  return (
+    <tr className="hover:bg-slate-50 transition-colors group">
+      <td className="px-6 py-6">
+        <div className="font-black text-slate-900 text-lg tracking-tight">{bean.productName}</div>
+        <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">{formatWeight(bean.quantityLbs)} in stock</div>
+      </td>
+      <td className="px-6 py-6 font-bold text-slate-600 text-lg">
+        {formatPrice(bean.costPerLb)}
+      </td>
+      <td className="px-6 py-6 min-w-[200px]">
+        <div className="flex flex-col gap-3">
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Target Margin</span>
+            <span className="text-sm font-black text-amber-600 bg-amber-50 px-2 py-1 rounded-lg">{localMargin}%</span>
+          </div>
+          <input 
+            type="range" min="10" max="95" step="1" 
+            value={localMargin} 
+            onChange={handleChange}
+            onMouseUp={handleCommit}
+            onTouchEnd={handleCommit}
+            className="w-full h-2 bg-slate-100 rounded-full appearance-none cursor-pointer accent-amber-500 hover:accent-amber-600 transition-all" 
+          />
+        </div>
+      </td>
+      <td className="px-6 py-6 text-right">
+        <div className="text-2xl font-black text-slate-900">{formatPrice(targetPrice)}</div>
+        <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Suggested Price</div>
+      </td>
+    </tr>
+  );
+};
+
 export default function CafePage() {
   const { formatCurrency, formatWeight, formatPrice } = useUnits();
   const { showToast } = useToast();
@@ -64,12 +118,6 @@ export default function CafePage() {
       setIsAddingIncome(false);
       setIncomeAmount('');
     } catch (err) { showToast('Error saving income', 'error'); }
-  };
-
-  const handleUpdateMargin = async (id: any, val: number) => {
-    try {
-       await updateRoastedMargin({ id, targetMargin: val });
-    } catch (err) { showToast('Error updating margin', 'error'); }
   };
 
   if (isLoading) return <div className="p-4 md:p-8 space-y-8"><Skeleton className="h-[600px] w-full rounded-[2.5rem]" /></div>;
@@ -179,33 +227,19 @@ export default function CafePage() {
                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Target Price</th>
                         </tr>
                      </thead>
-                     <tbody className="divide-y divide-slate-50">
-                        {roastedStock?.filter((b: any) => b.quantityLbs > 0).map((bean: any) => {
-                           const currentMargin = bean.targetMargin || settings?.defaultTargetMargin || 75;
-                           const targetPrice = bean.costPerLb / (1 - (currentMargin / 100));
-                           return (
-                             <tr key={bean._id} className="hover:bg-slate-50 transition-colors">
-                                <td className="px-6 py-5">
-                                   <div className="font-bold text-slate-900">{bean.productName}</div>
-                                   <div className="text-[10px] text-slate-400 font-black uppercase">{formatWeight(bean.quantityLbs)} in stock</div>
-                                </td>
-                                <td className="px-6 py-5 text-center font-bold text-slate-600">{formatPrice(bean.costPerLb)}</td>
-                                <td className="px-6 py-5">
-                                   <div className="flex flex-col items-center gap-2">
-                                      <span className="text-xs font-black text-amber-600">{currentMargin}%</span>
-                                      <input 
-                                        type="range" min="30" max="95" step="5" 
-                                        value={currentMargin} 
-                                        onChange={(e) => handleUpdateMargin(bean._id, parseInt(e.target.value))}
-                                        className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-amber-500" 
-                                      />
-                                   </div>
-                                </td>
-                                <td className="px-6 py-5 text-right font-black text-slate-900">{formatPrice(targetPrice)}</td>
-                             </tr>
-                           )
-                        })}
-                     </tbody>
+                      <tbody className="divide-y divide-slate-100">
+                         {roastedStock?.filter((b: any) => b.quantityLbs > 0).map((bean: any) => (
+                           <PortfolioRow 
+                             key={bean._id} 
+                             bean={bean} 
+                             settings={settings} 
+                             formatPrice={formatPrice} 
+                             formatWeight={formatWeight} 
+                             updateRoastedMargin={updateRoastedMargin} 
+                           />
+                         ))}
+                      </tbody>
+
                   </table>
                </div>
             </Card>

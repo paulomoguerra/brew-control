@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { Award, Loader2, CheckCircle2, TrendingUp, Star, Microscope, X } from 'lucide-react';
+import { Award, Loader2, CheckCircle2, TrendingUp, Star, Microscope, X, Search } from 'lucide-react';
 import { useUnits } from '../../lib/units';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis, ReferenceLine, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import { Card } from '../../components/ui/Card';
@@ -39,6 +39,40 @@ export default function QualityPage() {
     defects: 0
   });
 
+  const [physical, setPhysical] = useState({
+    moisture: '',
+    density: '',
+    agtron: ''
+  });
+
+  const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
+  const [flavorSearch, setFlavorSearch] = useState('');
+
+  const flavorWheel = {
+    "Fruity": ["Berry", "Dried Fruit", "Citrus", "Stone Fruit", "Tropical Fruit"],
+    "Floral": ["Black Tea", "Chamomile", "Rose", "Jasmine"],
+    "Sweet": ["Caramel", "Brown Sugar", "Honey", "Maple Syrup", "Vanilla"],
+    "Nutty/Cocoa": ["Peanut", "Hazelnut", "Almond", "Dark Chocolate", "Milk Chocolate"],
+    "Spices": ["Clove", "Cinnamon", "Nutmeg", "Black Pepper"],
+    "Roasted": ["Pipe Tobacco", "Burnt Sugar", "Smoky", "Acrid"],
+    "Green/Vegetal": ["Grassy", "Pea Pod", "Hay-like", "Herbaceous"]
+  };
+
+  const allFlavors = Object.entries(flavorWheel).flatMap(([cat, items]) => 
+    items.map(item => ({ category: cat, name: item }))
+  );
+
+  const filteredFlavors = allFlavors.filter(f => 
+    f.name.toLowerCase().includes(flavorSearch.toLowerCase()) ||
+    f.category.toLowerCase().includes(flavorSearch.toLowerCase())
+  );
+
+  const toggleFlavor = (flavor: string) => {
+    setSelectedFlavors(prev => 
+      prev.includes(flavor) ? prev.filter(f => f !== flavor) : [...prev, flavor]
+    );
+  };
+
   const [selectedSession, setSelectedSession] = useState<any>(null);
 
   const isLoading = recentRoasts === undefined || sessions === undefined;
@@ -67,6 +101,7 @@ export default function QualityPage() {
         cupperName,
         score: totalScore,
         notes,
+        flavors: selectedFlavors,
         ...attributes
       });
       
@@ -75,6 +110,8 @@ export default function QualityPage() {
         setSuccess(false);
         setNotes('');
         setSelectedRoastId('');
+        setSelectedFlavors([]);
+        setPhysical({ moisture: '', density: '', agtron: '' });
         setAttributes({ aroma: 8, flavor: 8, aftertaste: 8, acidity: 8, body: 8, balance: 8, uniformity: 10, cleanCup: 10, sweetness: 10, defects: 0 });
       }, 2000);
     } catch (err) {
@@ -179,6 +216,58 @@ export default function QualityPage() {
                       />
                    </div>
                  ))}
+              </div>
+
+              {/* Flavor Wheel Selector */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-end">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Flavor Notes</label>
+                  <span className="text-[10px] font-black text-amber-500 uppercase">{selectedFlavors.length} Selected</span>
+                </div>
+                
+                <div className="relative">
+                  <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input 
+                    type="text"
+                    placeholder="Search flavors (e.g. Jasmine, Citrus...)"
+                    value={flavorSearch}
+                    onChange={e => setFlavorSearch(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-slate-900 transition-all"
+                  />
+                </div>
+
+                <div className="h-40 overflow-y-auto pr-2 custom-scrollbar space-y-4">
+                  {Object.entries(flavorWheel).map(([category, items]) => {
+                    const categoryMatches = items.filter(item => 
+                      item.toLowerCase().includes(flavorSearch.toLowerCase()) || 
+                      category.toLowerCase().includes(flavorSearch.toLowerCase())
+                    );
+                    
+                    if (categoryMatches.length === 0) return null;
+
+                    return (
+                      <div key={category} className="space-y-2">
+                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em]">{category}</span>
+                        <div className="flex flex-wrap gap-2">
+                          {categoryMatches.map(flavor => (
+                            <button
+                              key={flavor}
+                              type="button"
+                              onClick={() => toggleFlavor(flavor)}
+                              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all border ${
+                                selectedFlavors.includes(flavor)
+                                ? 'bg-slate-900 text-white border-slate-900 shadow-md'
+                                : 'bg-white text-slate-600 border-slate-200 hover:border-amber-500'
+                              }`}
+                            >
+                              {flavor}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="p-4 md:p-5 bg-slate-900 text-white rounded-2xl flex justify-between items-center shadow-lg">

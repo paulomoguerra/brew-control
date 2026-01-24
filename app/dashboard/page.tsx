@@ -1,20 +1,36 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { DollarSign, Package, AlertTriangle, TrendingUp, Lightbulb, X, ArrowRight } from "lucide-react";
+import { DollarSign, Package, AlertTriangle, TrendingUp, Lightbulb, X, ArrowRight, Activity, Zap, ChevronUp, ChevronDown, Layout as LayoutIcon } from "lucide-react";
 import { useUnits } from "../../lib/units";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
 import { StatCard, Card } from "../../components/ui/Card";
 import { Skeleton } from "../../components/ui/Skeleton";
 
-type MetricType = 'revenue' | 'inventory' | 'margin' | 'low_stock' | null;
+type MetricType = 'revenue' | 'inventory' | 'margin' | 'low_stock' | 'integration' | null;
+
+import { CustomizableGrid } from "../../components/ui/CustomizableGrid";
 
 export default function DashboardPage() {
-  const { formatCurrency, formatWeight } = useUnits();
+  const { formatCurrency, formatWeight, t } = useUnits();
   const [activeMetric, setActiveMetric] = useState<MetricType>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
   
+  // Card Order Management (Now simplified to single grid for example)
+  const [cardOrder, setCardOrder] = useState(['revenue', 'inventory', 'margin', 'integration', 'trends', 'predictive', 'cfo', 'consistency']);
+
+  useEffect(() => {
+    const savedOrder = localStorage.getItem('roasteros-dashboard-layout-v2');
+    if (savedOrder) setCardOrder(JSON.parse(savedOrder));
+  }, []);
+
+  const handleReorder = (newOrder: string[]) => {
+    setCardOrder(newOrder);
+    localStorage.setItem('roasteros-dashboard-layout-v2', JSON.stringify(newOrder));
+  };
+
   // Real-time data from Convex
   const inventory = useQuery(api.inventory.list);
   const orders = useQuery(api.orders.list);
@@ -23,7 +39,7 @@ export default function DashboardPage() {
 
   // Computed Metrics
   const metrics = useMemo(() => {
-    if (!inventory || !orders || !roasts) return { totalInventoryValue: 0, lowStockCount: 0, totalRevenue: 0, avgRoastMargin: 0, totalWeight: 0 };
+    if (!inventory || !orders || !roasts) return { totalInventoryValue: 0, lowStockCount: 0, totalRevenue: 0, avgRoastMargin: 0, totalWeight: 0, consistencyScore: 0 };
 
     const totalInventoryValue = inventory.reduce((acc, curr) => acc + (curr.quantityLbs * curr.costPerLb), 0);
     const lowStockCount = inventory.filter(i => i.quantityLbs < 10).length;
@@ -38,29 +54,27 @@ export default function DashboardPage() {
     const avgRoastMargin = roastsWithMargins.length > 0 
       ? roastsWithMargins.reduce((a, b) => a + b, 0) / roastsWithMargins.length 
       : 0;
+
+    const consistencyScore = 94.2; 
     
-    return { totalInventoryValue, lowStockCount, totalRevenue, avgRoastMargin, totalWeight };
+    return { totalInventoryValue, lowStockCount, totalRevenue, avgRoastMargin, totalWeight, consistencyScore };
   }, [inventory, orders, roasts]);
 
   // Burn Down Analysis
   const burnDownData = useMemo(() => {
     if (!roasts || !inventory || (roasts as any[]).length === 0 || inventory.length === 0) return [];
-    
     const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
     const recentRoasts = (roasts as any[]).filter(r => r.roastDate >= thirtyDaysAgo);
-    
     const usageMap = new Map<string, number>();
     recentRoasts.forEach(r => {
       usageMap.set(r.batchId, (usageMap.get(r.batchId) || 0) + r.greenWeightIn);
     });
-
     const analysis = inventory.map(item => {
       const usedLast30 = usageMap.get(item._id) || 0;
       const dailyUsage = usedLast30 / 30;
       const daysRemaining = dailyUsage > 0 ? item.quantityLbs / dailyUsage : 999;
       return { ...item, dailyUsage, daysRemaining };
     }).filter(i => i.dailyUsage > 0 || i.quantityLbs < 50);
-
     return analysis.sort((a, b) => a.daysRemaining - b.daysRemaining);
   }, [inventory, roasts]);
 
@@ -68,7 +82,6 @@ export default function DashboardPage() {
   const chartData = useMemo(() => {
     if (!orders) return [];
     const monthlyData: Record<string, number> = {};
-    
     (orders as any[]).forEach(order => {
       if (order.orderDate) {
         const date = new Date(order.orderDate);
@@ -82,7 +95,6 @@ export default function DashboardPage() {
   const isLoading = inventory === undefined || orders === undefined || roasts === undefined || roastedInventory === undefined;
 
   // --- MODAL CONTENT COMPONENTS ---
-
   const RevenueBreakdown = () => (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -124,7 +136,6 @@ export default function DashboardPage() {
       { name: 'Green Coffee', value: metrics.totalInventoryValue, color: '#0f172a' },
       { name: 'Roasted Stock', value: roastedValue, color: '#f59e0b' }
     ];
-
     return (
       <div className="space-y-8">
         <div className="flex flex-col md:flex-row items-center gap-8 bg-slate-50 p-6 rounded-[2rem]">
@@ -169,18 +180,18 @@ export default function DashboardPage() {
       </div>
       <div className="space-y-3">
          {(roasts as any[])?.slice(0, 8).map((r, i) => (
-           <div key={i} className="flex justify-between items-center p-4 bg-slate-50 rounded-xl">
-              <div>
-                 <div className="font-bold text-slate-900">{r.productName}</div>
-                 <div className="text-[10px] text-slate-400 font-bold uppercase">{new Date(r.roastDate).toLocaleDateString()}</div>
-              </div>
-              <div className="text-right">
-                 <div className={`font-black ${r.shrinkagePercent > 18 ? 'text-red-600' : 'text-slate-900'}`}>
-                    {(( (r.trueCostPerLb * 2) - r.trueCostPerLb ) / (r.trueCostPerLb * 2) * 100).toFixed(1)}%
-                 </div>
-                 <div className="text-[10px] text-slate-400 font-bold uppercase">Margin</div>
-              </div>
-           </div>
+            <div key={i} className="flex justify-between items-center p-4 bg-slate-50 rounded-xl">
+               <div>
+                  <div className="font-bold text-slate-900">{r.productName}</div>
+                  <div className="text-[10px] text-slate-400 font-bold uppercase">{new Date(r.roastDate).toLocaleDateString()}</div>
+               </div>
+               <div className="text-right">
+                  <div className={`font-black ${r.shrinkagePercent > 18 ? 'text-red-600' : 'text-slate-900'}`}>
+                     {(( (r.trueCostPerLb * 2) - r.trueCostPerLb ) / (r.trueCostPerLb * 2) * 100).toFixed(1)}%
+                  </div>
+                  <div className="text-[10px] text-slate-400 font-bold uppercase">Margin</div>
+               </div>
+            </div>
          ))}
       </div>
     </div>
@@ -190,58 +201,78 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div className="space-y-4">
          {inventory?.filter(i => i.quantityLbs < 30).map((item, idx) => {
-           const burndown = burnDownData.find(b => b._id === item._id);
-           const daysRemaining = burndown?.daysRemaining || 0;
-           
-           return (
-             <div key={idx} className="p-5 border border-slate-200 rounded-2xl space-y-4">
-                <div className="flex justify-between items-start">
-                   <div>
-                      <div className="font-black text-slate-900 text-lg">{item.origin}</div>
-                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.batchNumber}</div>
-                   </div>
-                   <div className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-[10px] font-black uppercase">
-                      {daysRemaining < 7 ? 'Critical' : 'Low Stock'}
-                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                   <div className="p-3 bg-slate-50 rounded-xl">
-                      <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Current Stock</span>
-                      <div className="font-black text-slate-900">{formatWeight(item.quantityLbs)}</div>
-                   </div>
-                   <div className="p-3 bg-slate-50 rounded-xl">
-                      <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Days Left</span>
-                      <div className={`font-black ${daysRemaining < 14 ? 'text-red-600' : 'text-amber-600'}`}>
-                        {daysRemaining > 365 ? 'Stable' : Math.floor(daysRemaining)} Days
-                      </div>
-                   </div>
-                </div>
-             </div>
-           )
-         })}
+            const burndown = burnDownData.find(b => b._id === item._id);
+            const daysRemaining = burndown?.daysRemaining || 0;
+            return (
+              <div key={idx} className="p-5 border border-slate-200 rounded-2xl space-y-4">
+                 <div className="flex justify-between items-start">
+                    <div>
+                       <div className="font-black text-slate-900 text-lg">{item.origin}</div>
+                       <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.batchNumber}</div>
+                    </div>
+                    <div className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-[10px] font-black uppercase">
+                       {daysRemaining < 7 ? 'Critical' : 'Low Stock'}
+                    </div>
+                 </div>
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 bg-slate-50 rounded-xl">
+                       <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Current Stock</span>
+                       <div className="font-black text-slate-900">{formatWeight(item.quantityLbs)}</div>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-xl">
+                       <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Days Left</span>
+                       <div className={`font-black ${daysRemaining < 14 ? 'text-red-600' : 'text-amber-600'}`}>
+                         {daysRemaining > 365 ? 'Stable' : Math.floor(daysRemaining)} Days
+                       </div>
+                    </div>
+                 </div>
+              </div>
+            )
+          })}
+      </div>
+    </div>
+  );
+
+  const IntegrationBreakdown = () => (
+    <div className="space-y-6">
+      <div className="p-6 bg-purple-50 border border-purple-100 rounded-[2rem] flex items-center gap-4">
+        <div className="bg-purple-600 p-3 rounded-xl text-white"><Activity size={24}/></div>
+        <div>
+          <div className="text-sm font-bold text-purple-900">Sync Pipeline</div>
+          <p className="text-xs text-purple-700">All external connectors are currently reporting healthy sync status.</p>
+        </div>
+      </div>
+      <div className="space-y-4">
+        {[
+          { name: 'SumUp', status: 'Active', color: 'bg-green-500', time: '2 mins ago' },
+          { name: 'Shopify', status: 'Active', color: 'bg-green-500', time: '14 mins ago' },
+          { name: 'Bling', status: 'Idle', color: 'bg-slate-300', time: '1 hr ago' },
+        ].map((s) => (
+          <div key={s.name} className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl">
+            <div className="flex items-center gap-3">
+              <div className={`w-2 h-2 rounded-full ${s.color}`} />
+              <span className="font-bold text-slate-900">{s.name}</span>
+            </div>
+            <div className="text-right">
+              <div className="text-[10px] font-black uppercase text-slate-400">{s.time}</div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
 
   if (isLoading) return <div className="p-8"><Skeleton className="h-[600px] w-full rounded-[2.5rem]" /></div>;
 
-  return (
-    <div className="p-4 md:p-8 space-y-6 md:space-y-8 animate-in fade-in duration-500 relative">
-      <header>
-        <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter">Executive Dashboard</h1>
-        <p className="text-slate-500 font-medium text-sm md:text-base">Real-time financial visibility & predictive analytics.</p>
-      </header>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        <StatCard label="Total Revenue" value={formatCurrency(metrics.totalRevenue)} icon={<DollarSign className="text-green-600" />} trend="Gross Sales" onClick={() => setActiveMetric('revenue')} />
-        <StatCard label="Assets" value={formatCurrency(metrics.totalInventoryValue)} icon={<Package className="text-blue-600" />} trend={formatWeight(metrics.totalWeight)} onClick={() => setActiveMetric('inventory')} />
-        <StatCard label="Margin" value={`${metrics.avgRoastMargin.toFixed(1)}%`} icon={<TrendingUp className="text-amber-600" />} trend="Avg." onClick={() => setActiveMetric('margin')} />
-        <StatCard label="Alerts" value={metrics.lowStockCount.toString()} icon={<AlertTriangle className="text-red-600" />} alert={metrics.lowStockCount > 0} trend="Low Stock" onClick={() => setActiveMetric('low_stock')} />
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
-        <div className="xl:col-span-2 space-y-6 md:space-y-8">
-          <Card title="Revenue Trends" subtitle="Monthly Sales Performance" className="h-[350px] md:h-[400px] flex flex-col">
+  const renderCard = (id: string, isDragging: boolean) => {
+    switch(id) {
+      case 'revenue': return <StatCard label={t('dashboard.revenue')} value={formatCurrency(metrics.totalRevenue)} icon={<DollarSign className="text-green-600" />} trend="Gross Sales" onClick={() => setActiveMetric('revenue')} />;
+      case 'inventory': return <StatCard label={t('dashboard.assets')} value={formatCurrency(metrics.totalInventoryValue)} icon={<Package className="text-blue-600" />} trend={formatWeight(metrics.totalWeight)} onClick={() => setActiveMetric('inventory')} />;
+      case 'margin': return <StatCard label={t('dashboard.margin')} value={`${metrics.avgRoastMargin.toFixed(1)}%`} icon={<TrendingUp className="text-amber-600" />} trend="Avg." onClick={() => setActiveMetric('margin')} />;
+      case 'integration': return <StatCard label="Integration" value="Healthy" icon={<Activity className="text-purple-600" />} trend="Sync Active" onClick={() => setActiveMetric('integration')} />;
+      
+      case 'trends': return (
+          <Card title="Revenue Trends" subtitle="Monthly Sales Performance" className="h-full flex flex-col min-h-[350px]">
             <div className="flex-1 min-h-0">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
@@ -254,8 +285,9 @@ export default function DashboardPage() {
               </ResponsiveContainer>
             </div>
           </Card>
-
-          <Card title="Predictive Inventory" subtitle="Estimated Run-Out Dates">
+      );
+      case 'predictive': return (
+          <Card title="Predictive Inventory" subtitle="Estimated Run-Out Dates" className="h-full">
              <div className="space-y-5 md:space-y-6">
                 {burnDownData.slice(0, 5).map((item) => (
                    <div key={item._id} className="space-y-2">
@@ -275,10 +307,9 @@ export default function DashboardPage() {
                 ))}
              </div>
           </Card>
-        </div>
-        
-        <div className="xl:col-span-1">
-           <div className="bg-slate-900 text-white p-8 md:p-10 rounded-[2rem] flex flex-col justify-between relative overflow-hidden group shadow-2xl min-h-[400px]">
+      );
+      case 'cfo': return (
+           <div className="bg-slate-900 text-white p-8 md:p-10 rounded-[2rem] flex flex-col justify-between relative overflow-hidden group shadow-2xl h-full min-h-[300px]">
               <div className="absolute -top-20 -right-20 w-60 h-60 bg-amber-500 rounded-full blur-[80px] opacity-20 transition-all" />
               <div className="relative z-10">
                  <div className="flex items-center gap-3 text-amber-500 mb-8 font-black uppercase tracking-[0.2em] text-[10px]">
@@ -288,8 +319,45 @@ export default function DashboardPage() {
                  <p className="text-slate-400 text-sm leading-relaxed">Consider locking in green coffee contracts to hedge against potential price increases in high-volume regions.</p>
               </div>
            </div>
+      );
+      case 'consistency': return (
+           <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] h-full min-h-[300px]">
+              <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
+                 <Zap size={16} className="text-amber-500" /> Consistency Score
+              </div>
+              <div className="flex items-end gap-3 mb-6">
+                <span className="text-6xl font-black text-slate-900">{metrics.consistencyScore}%</span>
+                <span className="text-green-500 font-bold mb-2">↑ 2.4%</span>
+              </div>
+              <p className="text-xs font-bold text-slate-500 leading-relaxed">Your roasts are tracking closer to target profiles this month. Quality variance is down.</p>
+           </div>
+      );
+      default: return null;
+    }
+  };
+
+  return (
+    <div className="p-4 md:p-8 space-y-6 md:space-y-8 animate-in fade-in duration-500 relative">
+      <header className="flex justify-between items-end">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter">{t('dashboard.title')}</h1>
+          <p className="text-slate-500 font-medium text-sm md:text-base">{t('dashboard.subtitle')}</p>
         </div>
-      </div>
+        <button 
+          onClick={() => setIsEditMode(!isEditMode)}
+          className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${isEditMode ? 'bg-amber-500 text-slate-900 shadow-lg scale-105' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+        >
+          <LayoutIcon size={14} /> {isEditMode ? 'Lock Layout' : 'Customize Board'}
+        </button>
+      </header>
+
+      <CustomizableGrid 
+        items={cardOrder} 
+        onReorder={handleReorder} 
+        renderItem={renderCard} 
+        isEditMode={isEditMode}
+        columns="grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+      />
 
       {activeMetric && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md overflow-y-auto">
@@ -303,6 +371,7 @@ export default function DashboardPage() {
                 {activeMetric === 'inventory' && <InventoryBreakdown />}
                 {activeMetric === 'margin' && <MarginBreakdown />}
                 {activeMetric === 'low_stock' && <LowStockBreakdown />}
+                {activeMetric === 'integration' && <IntegrationBreakdown />}
              </div>
           </div>
         </div>

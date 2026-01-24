@@ -16,6 +16,13 @@ export default defineSchema({
     supplier: v.optional(v.string()),
     arrivedAt: v.number(),        // Date
     status: v.union(v.literal("active"), v.literal("archived")),
+    // Physical Analysis (Value Add)
+    moistureContent: v.optional(v.number()),
+    density: v.optional(v.number()),
+    defectCount: v.optional(v.number()),
+    // Integration Layer
+    externalReferenceId: v.optional(v.string()),
+    sourceSystem: v.optional(v.string()), // e.g., "Bling", "Shopify"
   }).index("by_quantity", ["quantityLbs"]),
 
   // 2. Roast Profiles (The Recipe - NEW)
@@ -25,6 +32,7 @@ export default defineSchema({
     targetDuration: v.number(),
     targetShrinkage: v.number(),  // e.g., 15%
     notes: v.optional(v.string()),
+    colorTargetAgtron: v.optional(v.number()),
   }),
 
   // 3. Roast Logs (The Work)
@@ -39,8 +47,12 @@ export default defineSchema({
     overheadCost: v.number(),     // Labor + Gas
     durationMinutes: v.number(),
     roastDate: v.number(),
+    // Quality Metrics
+    agtronReading: v.optional(v.number()),
+    isGoldStandard: v.optional(v.boolean()),
     // Link to external data (Phase 3)
     artisanLogId: v.optional(v.string()), 
+    externalReferenceId: v.optional(v.string()),
   }).index("by_date", ["roastDate"]),
 
   // 4. Roasted Inventory (Finished Goods)
@@ -74,6 +86,9 @@ export default defineSchema({
       status: v.string(),
       timestamp: v.number(),
     }))),
+    // Integration Layer
+    externalReferenceId: v.optional(v.string()),
+    sourceSystem: v.optional(v.string()), // e.g. "SumUp", "Shopify"
   }).index("by_date", ["orderDate"]),
 
   // 7. Order Items (Line Items)
@@ -94,11 +109,17 @@ export default defineSchema({
     volumeOz: v.optional(v.number()), 
   }),
 
-  // 9. Cafe Menu Items (Recipes)
+  // 9. Cafe Menu Items (Recipes / Brewing Lab)
   menuItems: defineTable({
-    name: v.string(), // "Latte 12oz"
+    name: v.string(), // "Latte 12oz" or "V60 Ethiopia"
     salePrice: v.number(), // $5.50
     coffeeDosageGrams: v.number(), // 18.5g
+    method: v.optional(v.string()), // "Espresso", "V60", "Aeropress"
+    grindSetting: v.optional(v.string()), 
+    waterTemp: v.optional(v.number()), 
+    targetYield: v.optional(v.number()), // grams out
+    targetTime: v.optional(v.number()), // seconds
+    technique: v.optional(v.string()), // Rich description / Expert tips
     // Ingredients needed
     components: v.array(v.object({
       ingredientId: v.id("ingredients"),
@@ -124,6 +145,10 @@ export default defineSchema({
     cleanCup: v.number(),
     sweetness: v.number(),
     defects: v.optional(v.number()), // Negative points
+    // Physical Metrics
+    tdsReading: v.optional(v.number()),
+    extractionYield: v.optional(v.number()),
+    flavors: v.optional(v.array(v.string())),
   }).index("by_date", ["sessionDate"]),
 
   // 11. Recipes (Blend Engineering)
@@ -165,4 +190,16 @@ export default defineSchema({
     date: v.number(),
     notes: v.optional(v.string()),
   }).index("by_date", ["date"]),
+
+  // 15. User Preferences (The Personal Layer)
+  userPreferences: defineTable({
+    userId: v.string(), // Clerk ID
+    language: v.union(v.literal("en"), v.literal("pt-BR")),
+    weightUnit: v.union(v.literal("metric"), v.literal("imperial")),
+    currency: v.string(), // e.g., "BRL", "CAD", "USD"
+    theme: v.union(v.literal("light"), v.literal("dark")),
+    temperatureUnit: v.union(v.literal("C"), v.literal("F")),
+    // Feature Toggles (Optional Settings)
+    enabledFeatures: v.array(v.string()), // e.g. ["integration_bling", "traceability"]
+  }).index("by_user", ["userId"]),
 });
