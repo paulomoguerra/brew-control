@@ -27,6 +27,7 @@ import { Card } from "../../components/ui/Card";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { calculateRoastEconomics, calculateBlendCost } from "../../lib/finance";
 import { CustomizableGrid } from "../../components/ui/CustomizableGrid";
+import { RoastLogModal } from "../../components/RoastLogModal";
 
 type TabType = "plan" | "blends" | "forecast";
 type EconomicsMode = "quick" | "full";
@@ -64,7 +65,6 @@ export default function ProductionHub() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [cardOrder, setCardOrder] = useState(["workflow", "green_assets", "roasted_stock", "activity_feed"]);
   const [economicsMode, setEconomicsMode] = useState<EconomicsMode>("full");
-  const [targetMargin, setTargetMargin] = useState(35); // Default 35% margin
 
   // Plan Mode State
   const [plannedGreenIn, setPlannedGreenIn] = useState<string>("10");
@@ -123,14 +123,16 @@ export default function ProductionHub() {
     return errors;
   }, [plannedGreenIn, plannedRoastedOut]);
 
-  // Optional Simulations
-  const [showSimulations, setShowSimulations] = useState(false);
-  const [machineCapacity, setMachineCapacity] = useState<string>("12");
-  const [targetBagSize, setTargetBagSize] = useState<string>("0.25");
+  // Optional Simulations - REMOVED, keeping only bag size
+  const [targetBagSize, setTargetBagSize] = useState<string>("250"); // grams
+  const [isCustomBagSize, setIsCustomBagSize] = useState(false);
   
   // Execution State (Logging from Plan)
   const [isLoggingPlanned, setIsLoggingPlanned] = useState(false);
   const [actualRoastedWeight, setActualRoastedWeight] = useState("");
+  
+  // Roast Log Modal
+  const [isLogModalOpen, setIsLogModalOpen] = useState(false);
 
   // Blend Designer State
   const [newBlendName, setNewBlendName] = useState("");
@@ -156,15 +158,13 @@ export default function ProductionHub() {
   const planResults = useMemo(() => {
     const greenVal = parseFloat(plannedGreenIn) || 0;
     const roastedVal = parseFloat(plannedRoastedOut) || 0;
-    const capacityVal = parseFloat(machineCapacity) || 12;
-    const bagSizeVal = parseFloat(targetBagSize) || 0.25;
+    const bagSizeVal = parseFloat(targetBagSize) / 1000; // Convert grams to kg
 
     if (greenVal <= 0 || roastedVal <= 0) return null;
     
     // Validation: roasted cannot exceed green
     if (roastedVal > greenVal) return null;
     
-    const roastsNeeded = Math.ceil(greenVal / capacityVal);
     const bagsYield = Math.floor(roastedVal / bagSizeVal);
 
     if (planType === "single") {
@@ -177,18 +177,13 @@ export default function ProductionHub() {
       // Get cost per kg (convert from stored $/lb)
       const costPerKg = toDisplayPrice(selectedBatch.costPerLb);
       
-      // Calculate costs in kg
+      // Calculate costs in kg (assuming 12 min roast)
       const greenCost = greenVal * costPerKg;
-      const gasCost = financials.gasRate * roastsNeeded;
-      const totalCost = greenCost + gasCost;
+      const laborCost = (financials.laborRate * (12 / 60)); // 12 minutes
+      const gasCost = financials.gasRate;
+      const totalCost = greenCost + laborCost + gasCost;
       const unitCost = totalCost / roastedVal;
-      
-      // Pricing recommendations
-      const breakeven = unitCost;
-      const margin30 = breakeven / 0.70;
-      const margin50 = breakeven / 0.50;
-      const customPrice = breakeven / (1 - targetMargin / 100);
-      const projectedProfit = (customPrice - breakeven) * roastedVal;
+      const costPerBag = unitCost * bagSizeVal;
       
       return { 
         type: "single" as const, 
@@ -196,16 +191,12 @@ export default function ProductionHub() {
         roastedYield: roastedVal,
         isPossible, 
         greenCost,
+        laborCost,
         gasCost,
         totalCost,
-        roastsNeeded,
         bagsYield,
         unitCost,
-        breakeven,
-        margin30,
-        margin50,
-        customPrice,
-        projectedProfit,
+        costPerBag,
         maxPossible: availableKg,
         bottleneck: isPossible ? "" : selectedBatch.origin
       };
@@ -230,36 +221,29 @@ export default function ProductionHub() {
       
       // Use recipe projected cost (already calculated per roasted kg)
       const costPerRoastedKg = (selectedRecipe as any).projectedCostPerLb * 2.20462; // Convert $/lb to $/kg
-      const totalCost = costPerRoastedKg * roastedVal;
-      
-      // Pricing recommendations
-      const breakeven = costPerRoastedKg;
-      const margin30 = breakeven / 0.70;
-      const margin50 = breakeven / 0.50;
-      const customPrice = breakeven / (1 - targetMargin / 100);
-      const projectedProfit = (customPrice - breakeven) * roastedVal;
+      const laborCost = (financials.laborRate * (12 / 60));
+      const gasCost = financials.gasRate;
+      const totalCost = (costPerRoastedKg * roastedVal) + laborCost + gasCost;
+      const unitCost = totalCost / roastedVal;
+      const costPerBag = unitCost * bagSizeVal;
       
       return { 
         type: "blend" as const, 
         greenRequired: greenVal, 
         roastedYield: roastedVal, 
         isPossible, 
-        greenCost: 0, // Not individually tracked for blends
-        gasCost: financials.gasRate * roastsNeeded,
+        greenCost: costPerRoastedKg * greenVal,
+        laborCost,
+        gasCost,
         totalCost,
-        roastsNeeded,
         bagsYield,
-        unitCost: costPerRoastedKg,
-        breakeven,
-        margin30,
-        margin50,
-        customPrice,
-        projectedProfit,
+        unitCost,
+        costPerBag,
         maxPossible: maxPossibleOutput,
         bottleneck: limitingFactor
       };
     }
-  }, [plannedGreenIn, plannedRoastedOut, planType, selectedBatch, selectedRecipe, toStorageWeight, toDisplayWeight, toDisplayPrice, machineCapacity, targetBagSize, batches, financials, targetMargin]);
+  }, [plannedGreenIn, plannedRoastedOut, planType, selectedBatch, selectedRecipe, toStorageWeight, toDisplayWeight, toDisplayPrice, targetBagSize, batches, financials]);
 
   const blendStats = useMemo(() => {
     let totalPct = 0; 
@@ -347,199 +331,201 @@ export default function ProductionHub() {
       case "plan": return (
         <Card title="Production Planner" subtitle="Target-based simulations & execution">
            <div className="space-y-10">
-              {/* Mode Toggle */}
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div className="flex bg-slate-100 p-1.5 rounded-2xl w-full md:w-fit overflow-x-auto no-scrollbar">
-                  <button onClick={() => setPlanType("single")} className={`flex-1 md:flex-none px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${planType === "single" ? "bg-white shadow-md text-slate-900" : "text-slate-500"}`}>Single Origin</button>
-                  <button onClick={() => setPlanType("blend")} className={`flex-1 md:flex-none px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${planType === "blend" ? "bg-white shadow-md text-slate-900" : "text-slate-500"}`}>Blend Recipe</button>
-                </div>
-                
-                {/* Economics Mode Toggle */}
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setEconomicsMode("quick")} className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${economicsMode === "quick" ? "bg-amber-500 text-slate-900" : "bg-slate-100 text-slate-500"}`}>
-                    <Zap size={12} className="inline mr-1" />Quick
-                  </button>
-                  <button onClick={() => setEconomicsMode("full")} className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${economicsMode === "full" ? "bg-amber-500 text-slate-900" : "bg-slate-100 text-slate-500"}`}>
-                    <Calculator size={12} className="inline mr-1" />Full Economics
-                  </button>
-                </div>
-                
-                <button onClick={() => setShowSimulations(!showSimulations)} className={`w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${showSimulations ? "bg-amber-100 text-amber-700" : "bg-slate-50 text-slate-400"}`}>
-                  <Calculator size={14} /> {showSimulations ? "Hide Simulations" : "Advanced Simulations"}
-                </button>
-              </div>
-              
-              <div className={`grid grid-cols-1 gap-12 items-start ${showSimulations ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
-                <div className="lg:col-span-1 space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Green Bean In ({unit})</label>
-                    <div className="relative">
-                      <input type="number" step="0.1" value={plannedGreenIn} onChange={e => setPlannedGreenIn(e.target.value)} className="input-field bg-slate-50 text-2xl font-black py-6 pl-6 pr-12 rounded-[2rem] border-none focus:ring-2 focus:ring-amber-500/20" placeholder="0.0" />
-                      <div className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 font-black">{unit}</div>
-                    </div>
-                  </div>
+               {/* Mode Toggle - REMOVED Advanced Simulations button */}
+               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                 <div className="flex bg-slate-100 p-1.5 rounded-2xl w-full md:w-fit overflow-x-auto no-scrollbar">
+                   <button onClick={() => setPlanType("single")} className={`flex-1 md:flex-none px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${planType === "single" ? "bg-white shadow-md text-slate-900" : "text-slate-500"}`}>Single Origin</button>
+                   <button onClick={() => setPlanType("blend")} className={`flex-1 md:flex-none px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${planType === "blend" ? "bg-white shadow-md text-slate-900" : "text-slate-500"}`}>Blend Recipe</button>
+                 </div>
+                 
+                 {/* Economics Mode Toggle */}
+                 <div className="flex items-center gap-2">
+                   <button onClick={() => setEconomicsMode("quick")} className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${economicsMode === "quick" ? "bg-amber-500 text-slate-900" : "bg-slate-100 text-slate-500"}`}>
+                     <Zap size={12} className="inline mr-1" />Quick
+                   </button>
+                   <button onClick={() => setEconomicsMode("full")} className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${economicsMode === "full" ? "bg-amber-500 text-slate-900" : "bg-slate-100 text-slate-500"}`}>
+                     <Calculator size={12} className="inline mr-1" />Full Economics
+                   </button>
+                 </div>
+               </div>
+               
+               {/* NEW 50/50 LAYOUT */}
+               <div className="grid grid-cols-1 gap-12 items-start lg:grid-cols-2">
+                 {/* LEFT COLUMN (1/2) - INPUTS */}
+                 <div className="space-y-6">
+                   <div className="space-y-2">
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Green Bean In ({unit})</label>
+                     <div className="relative">
+                       <input type="number" step="0.1" value={plannedGreenIn} onChange={e => setPlannedGreenIn(e.target.value)} className="input-field bg-slate-50 text-2xl font-black py-6 pl-6 pr-12 rounded-[2rem] border-none focus:ring-2 focus:ring-amber-500/20" placeholder="0.0" />
+                       <div className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 font-black">{unit}</div>
+                     </div>
+                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Roasted Bean Out ({unit})</label>
-                    <div className="relative">
-                      <input type="number" step="0.1" value={plannedRoastedOut} onChange={e => setPlannedRoastedOut(e.target.value)} className="input-field bg-slate-50 text-2xl font-black py-6 pl-6 pr-12 rounded-[2rem] border-none focus:ring-2 focus:ring-amber-500/20" placeholder="0.0" />
-                      <div className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 font-black">{unit}</div>
-                    </div>
-                  </div>
+                   <div className="space-y-2">
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Roasted Bean Out ({unit})</label>
+                     <div className="relative">
+                       <input type="number" step="0.1" value={plannedRoastedOut} onChange={e => setPlannedRoastedOut(e.target.value)} className="input-field bg-slate-50 text-2xl font-black py-6 pl-6 pr-12 rounded-[2rem] border-none focus:ring-2 focus:ring-amber-500/20" placeholder="0.0" />
+                       <div className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 font-black">{unit}</div>
+                     </div>
+                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex justify-between">
-                      Calculated Shrinkage <span className="text-amber-500 italic">Suggested {suggestedShrinkage}%</span>
-                    </label>
-                    <div className="p-6 bg-slate-50 rounded-[2rem] text-2xl font-black text-slate-300 flex items-center justify-between shadow-inner">
-                      <span>{currentShrinkage.toFixed(1)}</span>
-                      <span className="text-slate-200">%</span>
-                    </div>
-                  </div>
-                  
-                  {/* Validation Errors */}
-                  {validationErrors.length > 0 && (
-                    <div className="space-y-2">
-                      {validationErrors.map((err, idx) => (
-                        <div key={idx} className={`p-4 rounded-2xl flex items-start gap-3 ${err.type === 'critical' ? 'bg-red-50 border border-red-200' : 'bg-amber-50 border border-amber-200'}`}>
-                          <AlertCircle size={16} className={err.type === 'critical' ? 'text-red-600 mt-0.5' : 'text-amber-600 mt-0.5'} />
-                          <span className={`text-[10px] font-bold ${err.type === 'critical' ? 'text-red-700' : 'text-amber-700'}`}>{err.message}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{planType === "single" ? "Select Source Batch" : "Select Recipe"}</label>
-                    <div className="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                      {planType === "single" ? (
-                        batches?.filter(b => b.quantityLbs > 1).map(b => (
-                          <button key={b._id} onClick={() => setSelectedBatchId(b._id)} className={`p-4 rounded-2xl border-2 text-left transition-all ${selectedBatchId === b._id ? "border-amber-500 bg-amber-50/50 scale-[0.98]" : "border-slate-50 bg-slate-50/50 hover:border-slate-200"}`}>
-                            <div className="flex justify-between items-start mb-1">
-                              <OriginName name={b.origin} arrivedAt={b.arrivedAt} className="font-black text-slate-900 uppercase text-xs" />
-                              <span className="text-[10px] font-black text-slate-400">{formatWeight(b.quantityLbs)}</span>
-                            </div>
-                            <div className="text-[8px] font-bold text-slate-400 uppercase">ID: {b.batchNumber}</div>
-                          </button>
-                        ))
-                      ) : (
-                        recipes?.map(r => (
-                          <button key={r._id} onClick={() => setSelectedRecipeId(r._id)} className={`p-4 rounded-2xl border-2 text-left transition-all ${selectedRecipeId === r._id ? "border-amber-500 bg-amber-50/50 scale-[0.98]" : "border-slate-50 bg-slate-50/50 hover:border-slate-200"}`}>
-                            <div className="font-black text-slate-900 uppercase text-xs mb-1">{r.name}</div>
-                            <div className="text-[8px] font-bold text-slate-400 uppercase">{r.components.length} Components</div>
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                </div>
-                
-                {showSimulations && (
-                  <div className="lg:col-span-1 space-y-8 min-h-[200px] border-x border-slate-50 px-8">
-                    <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-300">
-                      <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Capacity ({unit})</label><input type="number" value={machineCapacity} onChange={e => setMachineCapacity(e.target.value)} className="input-field bg-slate-50 py-3 rounded-xl border-none font-black" /></div>
-                      <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Bag Target</label><select value={targetBagSize} onChange={e => setTargetBagSize(e.target.value)} className="input-field bg-slate-50 py-3 rounded-xl border-none font-black"><option value="0.25">250g Retail</option><option value="0.5">500g Retail</option><option value="1">1kg Wholesale</option></select></div>
-                      {planResults && <div className="p-4 bg-amber-50 rounded-2xl space-y-3"><div className="flex justify-between items-center"><span className="text-[8px] font-black text-amber-600 uppercase">Workload</span><span className="text-xs font-black text-amber-900">{planResults.roastsNeeded} Roasts</span></div><div className="flex justify-between items-center"><span className="text-[8px] font-black text-amber-600 uppercase">Yield</span><span className="text-xs font-black text-amber-900">{planResults.bagsYield} Bags</span></div></div>}
-                    </div>
-                  </div>
-                )}
-                
-                <div className="lg:col-span-2 flex flex-col justify-center h-full">
-                  {planResults ? (
-                    <div className={`p-10 rounded-[3rem] space-y-6 shadow-2xl text-center transition-all ${planResults.isPossible && validationErrors.every(e => e.type !== 'critical') ? "bg-slate-900 text-white" : "bg-red-50 border-2 border-red-100 text-red-900"}`}>
-                       {!isLoggingPlanned ? (
-                         <>
-                           {/* Economics Section - Only show in Full mode */}
-                           {economicsMode === "full" && (
-                             <>
-                               <div className="grid grid-cols-3 gap-4 mb-6">
-                                 <div className="p-4 bg-white/5 rounded-2xl">
-                                   <span className="text-[9px] font-black uppercase tracking-widest text-amber-500 block mb-2">Breakeven</span>
-                                   <div className="text-lg font-black">{formatPrice(planResults.breakeven)}</div>
-                                 </div>
-                                 <div className="p-4 bg-white/5 rounded-2xl">
-                                   <span className="text-[9px] font-black uppercase tracking-widest text-green-400 block mb-2">30% Margin</span>
-                                   <div className="text-lg font-black">{formatPrice(planResults.margin30)}</div>
-                                 </div>
-                                 <div className="p-4 bg-white/5 rounded-2xl">
-                                   <span className="text-[9px] font-black uppercase tracking-widest text-green-400 block mb-2">50% Margin</span>
-                                   <div className="text-lg font-black">{formatPrice(planResults.margin50)}</div>
-                                 </div>
-                               </div>
-                               
-                               <div className="p-6 bg-white/5 rounded-2xl">
-                                 <div className="flex items-center justify-between mb-3">
-                                   <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Target Margin</span>
-                                   <div className="relative">
-                                     <input 
-                                       type="number" 
-                                       min="10" 
-                                       max="80" 
-                                       step="1"
-                                       value={targetMargin} 
-                                       onChange={e => {
-                                         const val = Number(e.target.value);
-                                         if (val >= 10 && val <= 80) {
-                                           setTargetMargin(val);
-                                         }
-                                       }}
-                                       className="w-20 bg-slate-700/50 border border-slate-600 rounded-xl px-3 py-2 text-xl font-black text-amber-500 text-center focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                                     />
-                                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-500/50 text-sm font-black pointer-events-none">%</span>
-                                   </div>
-                                 </div>
-                                 <input 
-                                   type="range" 
-                                   min="10" 
-                                   max="80" 
-                                   step="1" 
-                                   value={targetMargin} 
-                                   onChange={e => setTargetMargin(Number(e.target.value))}
-                                   className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
-                                 />
-                                 <div className="flex justify-between text-[8px] font-bold text-slate-500 mt-2">
-                                   <span>10%</span>
-                                   <span>30%</span>
-                                   <span>50%</span>
-                                   <span>70%</span>
-                                 </div>
-                               </div>
-                             </>
-                           )}
-                           
-                           <div className="flex justify-around items-center gap-4">
-                             <div className="text-center"><span className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-500 block mb-2">Green Required</span><div className="text-5xl font-black tracking-tighter italic">{planResults.greenRequired.toFixed(1)} <span className="text-xl not-italic uppercase opacity-40 ml-1">{unit}</span></div></div>
-                             {economicsMode === "full" && (
-                               <>
-                                 <div className="w-px h-12 bg-white/10" />
-                                 <div className="text-center"><span className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-500 block mb-2">Projected Profit</span><div className="text-3xl font-black italic tracking-tighter text-green-400">+{formatCurrency(planResults.projectedProfit)}</div></div>
-                               </>
-                             )}
-                           </div>
-                           
-                           <div className="pt-4 flex items-center justify-center gap-6 border-t border-white/5 mt-6">
-                             <div className="flex items-center gap-2">
-                               {planResults.isPossible && validationErrors.every(e => e.type !== 'critical') ? 
-                                 <div className="flex items-center gap-2 text-green-400 text-[10px] font-black uppercase tracking-widest"><div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" /> Inventory OK</div> : 
-                                 <div className="flex items-center gap-2 text-red-500 text-[10px] font-black uppercase tracking-widest"><AlertCircle size={14} /> {validationErrors.length > 0 ? 'Invalid Input' : `Low: ${planResults.bottleneck}`}</div>
-                               }
-                             </div>
-                             <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Max Cap: {planResults.maxPossible.toFixed(0)} {unit}</div>
-                           </div>
-                           
-                           {planResults.isPossible && validationErrors.every(e => e.type !== 'critical') && <button onClick={() => { setIsLoggingPlanned(true); setActualRoastedWeight(plannedRoastedOut); }} className="w-full mt-6 py-5 bg-amber-500 text-slate-900 rounded-[1.5rem] font-black uppercase text-xs tracking-[0.2em] hover:bg-amber-400 transition-all shadow-xl">Log Successful Production</button>}
-                         </>
-                       ) : (
-                         <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
-                           <div className="flex justify-between items-center px-4"><span className="text-xs font-black text-amber-500 uppercase tracking-widest italic">Fast Log</span><button onClick={() => setIsLoggingPlanned(false)} className="text-slate-500 hover:text-white"><X size={20}/></button></div>
-                           <div className="bg-white/5 p-8 rounded-[2rem] border border-white/10"><div className="text-left space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Actual Roasted ({unit})</label><input type="number" step="0.1" autoFocus value={actualRoastedWeight} onChange={e => setActualRoastedWeight(e.target.value)} className="w-full bg-transparent border-none text-5xl font-black text-white focus:ring-0 placeholder:text-white/10" placeholder="0.00" /></div></div>
-                           <div className="flex gap-4"><button onClick={() => setIsLoggingPlanned(false)} className="flex-1 py-4 bg-white/5 text-slate-500 font-black uppercase text-[10px] tracking-widest rounded-2xl hover:bg-white/10">Cancel</button><button disabled={isSubmitting || !actualRoastedWeight} onClick={handleLogPlanned} className="flex-[2] py-4 bg-amber-500 text-slate-900 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-amber-400 transition-colors disabled:opacity-50">{isSubmitting ? <Loader2 className="animate-spin mx-auto" size={16}/> : "Confirm & Update"}</button></div>
+                   <div className="space-y-2">
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex justify-between">
+                       Calculated Shrinkage <span className="text-amber-500 italic">Suggested {suggestedShrinkage}%</span>
+                     </label>
+                     <div className="p-6 bg-slate-50 rounded-[2rem] text-2xl font-black text-slate-300 flex items-center justify-between shadow-inner">
+                       <span>{currentShrinkage.toFixed(1)}</span>
+                       <span className="text-slate-200">%</span>
+                     </div>
+                   </div>
+                   
+                   {/* Bag Size Selector */}
+                   <div className="space-y-2">
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Bag Target</label>
+                     <select 
+                       value={isCustomBagSize ? "custom" : targetBagSize} 
+                       onChange={(e) => {
+                         if (e.target.value === "custom") {
+                           setIsCustomBagSize(true);
+                         } else {
+                           setIsCustomBagSize(false);
+                           setTargetBagSize(e.target.value);
+                         }
+                       }} 
+                       className="input-field bg-slate-50 py-4 rounded-xl border-none font-black"
+                     >
+                       <option value="250">250g Retail</option>
+                       <option value="500">500g Retail</option>
+                       <option value="1000">1kg Wholesale</option>
+                       <option value="custom">Custom...</option>
+                     </select>
+                     
+                     {isCustomBagSize && (
+                       <input 
+                         type="number" 
+                         placeholder="Enter bag size (grams)"
+                         onChange={(e) => setTargetBagSize(e.target.value)}
+                         className="input-field bg-slate-50 py-4 rounded-xl border-none font-black"
+                       />
+                     )}
+                   </div>
+                   
+                   {/* Validation Errors */}
+                   {validationErrors.length > 0 && (
+                     <div className="space-y-2">
+                       {validationErrors.map((err, idx) => (
+                         <div key={idx} className={`p-4 rounded-2xl flex items-start gap-3 ${err.type === 'critical' ? 'bg-red-50 border border-red-200' : 'bg-amber-50 border border-amber-200'}`}>
+                           <AlertCircle size={16} className={err.type === 'critical' ? 'text-red-600 mt-0.5' : 'text-amber-600 mt-0.5'} />
+                           <span className={`text-[10px] font-bold ${err.type === 'critical' ? 'text-red-700' : 'text-amber-700'}`}>{err.message}</span>
                          </div>
+                       ))}
+                     </div>
+                   )}
+
+                   <div className="space-y-4">
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{planType === "single" ? "Select Source Batch" : "Select Recipe"}</label>
+                     <div className="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                       {planType === "single" ? (
+                         batches?.filter(b => b.quantityLbs > 1).map(b => (
+                           <button key={b._id} onClick={() => setSelectedBatchId(b._id)} className={`p-4 rounded-2xl border-2 text-left transition-all ${selectedBatchId === b._id ? "border-amber-500 bg-amber-50/50 scale-[0.98]" : "border-slate-50 bg-slate-50/50 hover:border-slate-200"}`}>
+                             <div className="flex justify-between items-start mb-1">
+                               <OriginName name={b.origin} arrivedAt={b.arrivedAt} className="font-black text-slate-900 uppercase text-xs" />
+                               <span className="text-[10px] font-black text-slate-400">{formatWeight(b.quantityLbs)}</span>
+                             </div>
+                             <div className="text-[8px] font-bold text-slate-400 uppercase">ID: {b.batchNumber}</div>
+                           </button>
+                         ))
+                       ) : (
+                         recipes?.map(r => (
+                           <button key={r._id} onClick={() => setSelectedRecipeId(r._id)} className={`p-4 rounded-2xl border-2 text-left transition-all ${selectedRecipeId === r._id ? "border-amber-500 bg-amber-50/50 scale-[0.98]" : "border-slate-50 bg-slate-50/50 hover:border-slate-200"}`}>
+                             <div className="font-black text-slate-900 uppercase text-xs mb-1">{r.name}</div>
+                             <div className="text-[8px] font-bold text-slate-400 uppercase">{r.components.length} Components</div>
+                           </button>
+                         ))
                        )}
-                    </div>
-                  ) : <div className="p-16 border-4 border-dashed border-slate-100 rounded-[3rem] flex flex-col items-center justify-center text-slate-300 gap-6 h-full min-h-[300px]"><Plus size={64} strokeWidth={1} /><span className="text-xs font-black uppercase tracking-[0.3em]">Configure Plan to Simulate Yield</span></div>}
-                </div>
-              </div>
+                     </div>
+                   </div>
+                 </div>
+                 
+                 {/* RIGHT COLUMN (1/2) - RESULTS (DARK BOX) */}
+                 <div className="flex flex-col justify-center h-full">
+                   {planResults ? (
+                     <div className={`p-10 rounded-[3rem] space-y-6 shadow-2xl transition-all ${planResults.isPossible && validationErrors.every(e => e.type !== 'critical') ? "bg-slate-900 text-white" : "bg-red-50 border-2 border-red-100 text-red-900"}`}>
+                        {!isLoggingPlanned ? (
+                          <>
+                            {/* COST BREAKDOWN */}
+                            <div className="p-6 bg-white/5 rounded-2xl">
+                              <h3 className="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-4">Cost Breakdown</h3>
+                              <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-[9px] font-black uppercase text-slate-400">Green Cost</span>
+                                  <span className="font-black">{formatCurrency(planResults.greenCost)}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-[9px] font-black uppercase text-slate-400">Labor Cost</span>
+                                  <span className="font-black">{formatCurrency(planResults.laborCost)}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-[9px] font-black uppercase text-slate-400">Gas Cost</span>
+                                  <span className="font-black">{formatCurrency(planResults.gasCost)}</span>
+                                </div>
+                                <div className="h-px bg-white/10 my-2"></div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-[9px] font-black uppercase text-amber-500">TOTAL</span>
+                                  <span className="font-black text-lg">{formatCurrency(planResults.totalCost)}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-[9px] font-black uppercase text-amber-500">Cost/kg</span>
+                                  <span className="font-black text-xl text-amber-500">{formatPrice(planResults.unitCost)}</span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* YIELD */}
+                            <div className="p-6 bg-white/5 rounded-2xl">
+                              <h3 className="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-4">Yield</h3>
+                              <div className="space-y-3">
+                                <div className="text-center">
+                                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-1">Green Required</span>
+                                  <div className="text-4xl font-black tracking-tighter italic">{planResults.greenRequired.toFixed(1)} <span className="text-lg not-italic uppercase opacity-40">{unit}</span></div>
+                                </div>
+                                <div className="h-px bg-white/10"></div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-[9px] font-black uppercase text-slate-400">Bags Yield</span>
+                                  <span className="font-black text-lg">{planResults.bagsYield} x {targetBagSize}g</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-[9px] font-black uppercase text-slate-400">Cost/bag</span>
+                                  <span className="font-black text-xl text-amber-500">{formatCurrency(planResults.costPerBag)}</span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* STATUS */}
+                            <div className="pt-4 flex items-center justify-center gap-6 border-t border-white/5">
+                              <div className="flex items-center gap-2">
+                                {planResults.isPossible && validationErrors.every(e => e.type !== 'critical') ? 
+                                  <div className="flex items-center gap-2 text-green-400 text-[10px] font-black uppercase tracking-widest"><div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" /> Inventory OK</div> : 
+                                  <div className="flex items-center gap-2 text-red-500 text-[10px] font-black uppercase tracking-widest"><AlertCircle size={14} /> {validationErrors.length > 0 ? 'Invalid Input' : `Low: ${planResults.bottleneck}`}</div>
+                                }
+                              </div>
+                              <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Max Cap: {planResults.maxPossible.toFixed(0)} {unit}</div>
+                            </div>
+                            
+                            {/* LOG BUTTON */}
+                            {planResults.isPossible && validationErrors.every(e => e.type !== 'critical') && <button onClick={() => { setIsLoggingPlanned(true); setActualRoastedWeight(plannedRoastedOut); }} className="w-full mt-6 py-5 bg-amber-500 text-slate-900 rounded-[1.5rem] font-black uppercase text-xs tracking-[0.2em] hover:bg-amber-400 transition-all shadow-xl">Log Successful Production</button>}
+                          </>
+                        ) : (
+                          <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
+                            <div className="flex justify-between items-center px-4"><span className="text-xs font-black text-amber-500 uppercase tracking-widest italic">Fast Log</span><button onClick={() => setIsLoggingPlanned(false)} className="text-slate-500 hover:text-white"><X size={20}/></button></div>
+                            <div className="bg-white/5 p-8 rounded-[2rem] border border-white/10"><div className="text-left space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Actual Roasted ({unit})</label><input type="number" step="0.1" autoFocus value={actualRoastedWeight} onChange={e => setActualRoastedWeight(e.target.value)} className="w-full bg-transparent border-none text-5xl font-black text-white focus:ring-0 placeholder:text-white/10" placeholder="0.00" /></div></div>
+                            <div className="flex gap-4"><button onClick={() => setIsLoggingPlanned(false)} className="flex-1 py-4 bg-white/5 text-slate-500 font-black uppercase text-[10px] tracking-widest rounded-2xl hover:bg-white/10">Cancel</button><button disabled={isSubmitting || !actualRoastedWeight} onClick={handleLogPlanned} className="flex-[2] py-4 bg-amber-500 text-slate-900 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-amber-400 transition-colors disabled:opacity-50">{isSubmitting ? <Loader2 className="animate-spin mx-auto" size={16}/> : "Confirm & Update"}</button></div>
+                          </div>
+                        )}
+                     </div>
+                   ) : <div className="p-16 border-4 border-dashed border-slate-100 rounded-[3rem] flex flex-col items-center justify-center text-slate-300 gap-6 h-full min-h-[300px]"><Plus size={64} strokeWidth={1} /><span className="text-xs font-black uppercase tracking-[0.3em]">Configure Plan to Simulate Yield</span></div>}
+                 </div>
+               </div>
            </div>
         </Card>
       );
@@ -713,11 +699,38 @@ export default function ProductionHub() {
          </Card>
       );
       case "activity_feed": return (
-         <Card title="Activity Feed" subtitle="Recent roast history">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
-               {recentLogs?.slice(0, 6).map(log => (
-                 <div key={log._id} className="flex justify-between items-center border-b border-slate-50 pb-4 last:border-0 last:pb-0 group"><div><div className="font-black text-slate-900 text-xs uppercase tracking-tight">{log.productName}</div><div className="text-[8px] font-bold text-slate-400 uppercase mt-0.5">{new Date(log.roastDate).toLocaleDateString()}</div></div><div className="text-right"><div className="font-black text-slate-900 text-xs">{formatWeight(log.roastedWeightOut)}</div><div className={`text-[8px] font-black uppercase ${log.shrinkagePercent > 18 ? "text-red-500" : "text-green-600"}`}>{log.shrinkagePercent.toFixed(1)}% Loss</div></div></div>
-               ))}
+         <Card title="Roast Log History" subtitle="Complete batch tracking">
+            <div className="space-y-6">
+              {/* STATS */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-slate-50 rounded-xl">
+                  <div className="text-3xl font-black text-slate-900">{recentLogs?.length || 0}</div>
+                  <div className="text-[10px] uppercase text-slate-500 font-black mt-1">Total Roasts</div>
+                </div>
+                <div className="text-center p-4 bg-amber-50 rounded-xl">
+                  <div className="text-3xl font-black text-amber-600">
+                    {recentLogs && recentLogs.length > 0 
+                      ? (recentLogs.reduce((acc, log) => acc + log.shrinkagePercent, 0) / recentLogs.length).toFixed(1)
+                      : "0.0"
+                    }%
+                  </div>
+                  <div className="text-[10px] uppercase text-slate-500 font-black mt-1">Avg Shrinkage</div>
+                </div>
+                <div className="text-center p-4 bg-green-50 rounded-xl">
+                  <div className="text-3xl font-black text-green-600">
+                    {recentLogs?.filter(log => log.roastDate > Date.now() - 7 * 24 * 60 * 60 * 1000).length || 0}
+                  </div>
+                  <div className="text-[10px] uppercase text-slate-500 font-black mt-1">Last 7 Days</div>
+                </div>
+              </div>
+              
+              {/* VIEW FULL HISTORY BUTTON */}
+              <button 
+                onClick={() => setIsLogModalOpen(true)}
+                className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs hover:bg-amber-500 hover:text-slate-900 transition-all shadow-lg"
+              >
+                View Full History →
+              </button>
             </div>
          </Card>
       );
@@ -747,6 +760,9 @@ export default function ProductionHub() {
         </div>
       </header>
       <CustomizableGrid items={cardOrder} onReorder={handleReorder} renderItem={renderCard} isEditMode={isEditMode} columns="grid-cols-1 lg:grid-cols-3" getItemClassName={(id) => id === "workflow" ? "lg:col-span-3" : ""} />
+      
+      {/* Roast Log Modal */}
+      <RoastLogModal isOpen={isLogModalOpen} onClose={() => setIsLogModalOpen(false)} />
     </div>
   );
 }
