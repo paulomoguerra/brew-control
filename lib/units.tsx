@@ -16,6 +16,8 @@ interface ConfigContextType {
   setCurrency: (c: Currency) => void;
   setLanguage: (l: Language) => void;
   setTheme: (t: Theme) => void;
+  toggleUnit: () => void;
+  toggleCurrency: () => void;
   t: (key: string) => string;
   // Weight & Price helpers
   toDisplayWeight: (lbs: number) => number;
@@ -86,6 +88,18 @@ export function UnitProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const toggleUnit = () => {
+    const newUnit = unit === 'lbs' ? 'kg' : 'lbs';
+    setUnit(newUnit);
+  };
+
+  const toggleCurrency = () => {
+    const currencies: Currency[] = ['USD', 'BRL', 'CAD'];
+    const currentIndex = currencies.indexOf(currency);
+    const nextIndex = (currentIndex + 1) % currencies.length;
+    setCurrency(currencies[nextIndex]);
+  };
+
   const t = (key: string) => {
     const keys = key.split('.');
     let value = translations[language];
@@ -138,6 +152,8 @@ export function UnitProvider({ children }: { children: React.ReactNode }) {
       setCurrency,
       setLanguage,
       setTheme,
+      toggleUnit,
+      toggleCurrency,
       t,
       toDisplayWeight,
       toStorageWeight,

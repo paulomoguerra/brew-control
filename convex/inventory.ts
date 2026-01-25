@@ -22,12 +22,38 @@ export const add = mutation({
     taxCost: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await ctx.db.insert("greenInventory", {
-      ...args,
-      initialQuantityLbs: args.quantityLbs,
-      arrivedAt: Date.now(),
-      status: "active",
-    });
+    // Check if a batch with this number already exists and is active
+    const existing = await ctx.db
+      .query("greenInventory")
+      .filter((q) => q.and(
+        q.eq(q.field("batchNumber"), args.batchNumber),
+        q.eq(q.field("status"), "active")
+      ))
+      .first();
+
+    if (existing) {
+      // Calculate weighted average cost
+      const totalWeight = existing.quantityLbs + args.quantityLbs;
+      const weightedCost = ((existing.quantityLbs * existing.costPerLb) + (args.quantityLbs * args.costPerLb)) / totalWeight;
+      
+      await ctx.db.patch(existing._id, {
+        quantityLbs: totalWeight,
+        costPerLb: weightedCost,
+        // Optionally update other fields if provided
+        process: args.process || existing.process,
+        shippingCost: (existing.shippingCost || 0) + (args.shippingCost || 0),
+        taxCost: (existing.taxCost || 0) + (args.taxCost || 0),
+        arrivedAt: Date.now(), // Reset age since it's "refilled"
+      });
+      return existing._id;
+    } else {
+      return await ctx.db.insert("greenInventory", {
+        ...args,
+        initialQuantityLbs: args.quantityLbs,
+        arrivedAt: Date.now(),
+        status: "active",
+      });
+    }
   },
 });
 

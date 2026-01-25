@@ -30,42 +30,49 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { t } = useUnits();
   const [isCustomizeMode, setIsCustomizeMode] = useState(false);
-  const [sections, setSections] = useState([
+  const getSections = () => [
     {
       id: "command",
-      title: "Command Center",
+      title: t('common.overview'),
       items: [
         { id: "dash", href: "/dashboard", label: t('common.dashboard'), icon: <LayoutDashboard size={20} /> },
-        { id: "clients", href: "/clients", label: "Client Intelligence", icon: <Users size={20} /> },
+        { id: "clients", href: "/clients", label: t('common.clients'), icon: <Users size={20} /> },
       ]
     },
     {
       id: "revenue",
-      title: "Revenue & Sales",
+      title: t('common.production'),
       items: [
-        { id: "sales", href: "/sales", label: "Sales Hub", icon: <Package size={20} /> },
-        { id: "cafe", href: "/cafe", label: "Cafe Operations", icon: <Store size={20} /> },
+        { id: "sales", href: "/sales", label: t('common.sales'), icon: <Package size={20} /> },
+        { id: "cafe", href: "/cafe", label: t('common.cafe'), icon: <Store size={20} /> },
       ]
     },
     {
       id: "roastery",
-      title: "The Roastery",
+      title: t('common.roast'),
       items: [
-        { id: "prod", href: "/roast", label: "Production Hub", icon: <Flame size={20} /> },
-        { id: "green", href: "/inventory", label: "Green Coffee", icon: <Database size={20} /> },
-        { id: "roasted", href: "/inventory/roasted", label: "Roasted Stock", icon: <Package size={20} /> },
+        { id: "prod", href: "/roast", label: t('roast.title'), icon: <Flame size={20} /> },
+        { id: "green", href: "/inventory", label: t('common.inventory'), icon: <Database size={20} /> },
+        { id: "roasted", href: "/inventory/roasted", label: t('roast.roasted_stock'), icon: <Package size={20} /> },
       ]
     },
     {
       id: "lab",
-      title: "The Laboratory",
+      title: t('common.quality'),
       items: [
-        { id: "sensory", href: "/quality", label: "Sensory Lab", icon: <Award size={20} /> },
-        { id: "brew", href: "/recipes", label: "Brewing Lab", icon: <Book size={20} /> },
-        { id: "tools", href: "/calculator", label: "Precision Tools", icon: <Calculator size={20} /> },
+        { id: "sensory", href: "/quality", label: t('quality.title'), icon: <Award size={20} /> },
+        { id: "brew", href: "/recipes", label: t('common.recipes'), icon: <Book size={20} /> },
+        { id: "tools", href: "/calculator", label: t('calculator.title'), icon: <Calculator size={20} /> },
       ]
     },
-  ]);
+  ];
+  
+  const [sections, setSections] = useState(getSections());
+
+  useEffect(() => {
+    // Update sections when language changes
+    setSections(getSections());
+  }, [t]);
 
   useEffect(() => {
     const saved = localStorage.getItem('roasteros-sidebar-layout');

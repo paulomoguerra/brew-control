@@ -24,10 +24,22 @@ export const logRoast = mutation({
     const batch = await ctx.db.get(args.batchId);
     if (!batch) throw new Error("Batch not found");
 
-    // 2. Calculate Economics
+    // 2. VALIDATION: Physics and inventory checks
     if (args.greenWeightIn <= 0) throw new Error("Green weight must be positive");
     if (args.roastedWeightOut <= 0) throw new Error("Roasted weight must be positive");
-    if (args.roastedWeightOut > args.greenWeightIn) throw new Error("Roasted weight cannot exceed green weight");
+    if (args.roastedWeightOut > args.greenWeightIn) {
+      throw new Error("Roasted weight cannot exceed green weight (violates physics)");
+    }
+    
+    // Check inventory availability
+    if (batch.quantityLbs < args.greenWeightIn) {
+      throw new Error(
+        `Insufficient inventory. Available: ${batch.quantityLbs.toFixed(2)} lbs, ` +
+        `Required: ${args.greenWeightIn.toFixed(2)} lbs`
+      );
+    }
+
+    // 3. Calculate Economics
 
     const greenCost = batch.costPerLb * args.greenWeightIn;
     const overhead = (args.laborRate * (args.durationMinutes / 60)) + args.gasCostPerBatch;

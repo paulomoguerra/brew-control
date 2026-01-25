@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Bell, Search, Scale, DollarSign, Menu } from "lucide-react";
+import { Bell, Search, Scale, DollarSign, Menu, Languages } from "lucide-react";
 import { useUnits } from "../lib/units";
 
 interface HeaderProps {
@@ -10,7 +10,7 @@ interface HeaderProps {
 
 export default function Header({ onMenuClick }: HeaderProps) {
   const currentPath = usePathname();
-  const { unit, toggleUnit, currency, toggleCurrency } = useUnits();
+  const { unit, toggleUnit, currency, toggleCurrency, language, setLanguage } = useUnits();
 
   const getTitle = (path: string) => {
     if (path === "/" || path === "/dashboard") return "Dashboard";
@@ -32,7 +32,19 @@ export default function Header({ onMenuClick }: HeaderProps) {
         </h1>
       </div>
 
-      <div className="flex items-center gap-2 md:gap-6">
+      <div className="flex items-center gap-2 md:gap-4">
+        
+        {/* Language Toggle */}
+        <button 
+          onClick={() => setLanguage(language === 'en' ? 'pt-BR' : 'en')}
+          className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-[10px] md:text-xs font-black uppercase tracking-widest transition-colors border border-slate-200"
+          title="Toggle Language"
+        >
+          <Languages size={14} className="text-slate-500" />
+          <span className={language === 'en' ? 'text-slate-900' : 'text-slate-400'}>EN</span>
+          <span className="text-slate-300">/</span>
+          <span className={language === 'pt-BR' ? 'text-slate-900' : 'text-slate-400'}>PT</span>
+        </button>
         
         {/* Currency Toggle - Hidden on extra small mobile */}
         <button 
