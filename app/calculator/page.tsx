@@ -198,7 +198,7 @@ export default function CoffeeCalculator() {
                     Sign in to save and sync recipes across devices.
                   </div>
                   <div className="flex gap-3">
-                    <Link href="/sign-in" className="flex-1 btn-secondary">Sign In</Link>
+                    <Link href="/auth" className="flex-1 btn-secondary">Sign In</Link>
                     <Link href="/sign-up" className="flex-1 btn-primary">Create Account</Link>
                   </div>
                 </SignedOut>

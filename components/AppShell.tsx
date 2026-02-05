@@ -9,7 +9,7 @@ import MobileNav from "./MobileNav";
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLanding = pathname === "/";
-  const isAuthRoute = pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up");
+  const isAuthRoute = pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up") || pathname.startsWith("/auth");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   if (isLanding || isAuthRoute) {
