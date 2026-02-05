@@ -92,7 +92,11 @@ export default function CoffeeCalculator() {
     } catch (error) {
       console.error(error);
       const message = (error as any)?.message || 'Could not save recipe.';
-      showToast(message, 'error');
+      if (message.toLowerCase().includes("unauthorized")) {
+        showToast('Signed in, but Convex rejected the token. Check Clerk JWT template + Convex env vars, then redeploy.', 'error');
+      } else {
+        showToast(message, 'error');
+      }
     } finally {
       setIsSaving(false);
     }

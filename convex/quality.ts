@@ -3,23 +3,12 @@ import { mutation, query } from "./_generated/server";
 
 export const listSessions = query({
   handler: async (ctx) => {
-    const sessions = await ctx.db.query("cuppingSessions").order("desc").collect();
-    
-    const enrichedSessions = await Promise.all(sessions.map(async (session) => {
-      let roastInfo = null;
-      if (session.roastLogId) {
-        roastInfo = await ctx.db.get(session.roastLogId);
-      }
-      return { ...session, roastInfo };
-    }));
-
-    return enrichedSessions;
+    return await ctx.db.query("cuppingSessions").order("desc").collect();
   },
 });
 
 export const logSession = mutation({
   args: {
-    roastLogId: v.optional(v.id("roastLogs")),
     coffeeName: v.optional(v.string()),
     cupperName: v.string(),
     score: v.number(),
@@ -36,6 +25,7 @@ export const logSession = mutation({
     sweetness: v.number(),
     defects: v.optional(v.number()),
     flavors: v.optional(v.array(v.string())),
+    costPerLb: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     await ctx.db.insert("cuppingSessions", {

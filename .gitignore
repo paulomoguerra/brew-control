@@ -26,6 +26,9 @@ out/
 .env.test.local
 .env.production.local
 
+# Secrets
+Secret Keys/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -36,3 +39,4 @@ out/
 *.njsproj
 *.sln
 *.sw?
+.vercel

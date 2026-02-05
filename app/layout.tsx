@@ -17,9 +17,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="font-sans bg-cream text-slate-900 antialiased selection:bg-cream selection:text-espresso">
-        <ClerkProvider appearance={{ variables: { colorPrimary: "#8B5B3F" } }}>
+    <ClerkProvider
+      appearance={{ variables: { colorPrimary: "#8B5B3F" } }}
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+      afterSignInUrl="/calculator"
+      afterSignUpUrl="/calculator"
+    >
+      <html lang="en">
+        <body className="font-sans bg-cream text-slate-900 antialiased selection:bg-cream selection:text-espresso">
           <ConvexClientProvider>
             <UnitProvider>
               <ToastProvider>
@@ -29,8 +35,8 @@ export default function RootLayout({
               </ToastProvider>
             </UnitProvider>
           </ConvexClientProvider>
-        </ClerkProvider>
-      </body>
-    </html>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

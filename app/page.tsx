@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, Coffee, Sparkles, ShieldCheck, Smartphone, Stars } from "lucide-react";
+import { SignIn, SignedIn, SignedOut } from "@clerk/nextjs";
 
 const features = [
   {
@@ -50,12 +53,17 @@ export default function LandingPage() {
             <span className="text-lg font-black tracking-tight">Brewline</span>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/auth" className="btn-secondary">Sign In</Link>
-            <Link href="/sign-up" className="btn-primary">Create Account</Link>
+            <SignedOut>
+              <Link href="/auth" className="btn-secondary">Sign In</Link>
+              <Link href="/sign-up" className="btn-primary">Create Account</Link>
+            </SignedOut>
+            <SignedIn>
+              <Link href="/calculator" className="btn-primary">Open App</Link>
+            </SignedIn>
           </div>
         </header>
 
-        <section className="mt-16 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <section className="mt-16 grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-12 items-start">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-oat text-[10px] font-black uppercase tracking-[0.3em] text-espresso">
               <Sparkles size={14} /> Brewline Beta
@@ -67,56 +75,76 @@ export default function LandingPage() {
               Brewline is a phone-first calculator and sensory lab for roasters who care about precision.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/auth" className="btn-primary">
-                Sign In <ArrowRight size={16} />
-              </Link>
               <Link href="/calculator" className="btn-secondary">
-                View App
+                Explore App
+              </Link>
+              <Link href="/sign-up" className="btn-primary">
+                Create Account <ArrowRight size={16} />
               </Link>
             </div>
-          </div>
-          <div className="bg-white rounded-[2.5rem] border border-slate-200 p-8 shadow-xl">
-            <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Core Features</h2>
-            <div className="mt-6 space-y-4">
-              {features.map(feature => (
-                <div key={feature.title} className="flex items-start gap-4">
-                  <div className="p-2 rounded-xl bg-cream border border-oat">
-                    {feature.icon}
+            <div className="mt-10 bg-white rounded-[2.5rem] border border-slate-200 p-8 shadow-xl">
+              <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Core Features</h2>
+              <div className="mt-6 space-y-4">
+                {features.map(feature => (
+                  <div key={feature.title} className="flex items-start gap-4">
+                    <div className="p-2 rounded-xl bg-cream border border-oat">
+                      {feature.icon}
+                    </div>
+                    <div>
+                      <div className="font-black text-slate-900">{feature.title}</div>
+                      <p className="text-sm text-slate-500 font-medium">{feature.desc}</p>
+                    </div>
                   </div>
-                  <div>
-                    <div className="font-black text-slate-900">{feature.title}</div>
-                    <p className="text-sm text-slate-500 font-medium">{feature.desc}</p>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </section>
 
-        <section className="mt-16">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-black tracking-tight uppercase italic">Pricing</h2>
-            <span className="text-xs font-bold text-slate-500">More tiers coming soon</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {pricing.map(tier => (
-              <div
-                key={tier.name}
-                className={`rounded-[2rem] p-8 border shadow-xl ${tier.highlight ? "bg-espresso text-white border-espresso" : "bg-white border-slate-200"}`}
-              >
-                <div className="text-[10px] font-black uppercase tracking-[0.3em] opacity-70">{tier.name}</div>
-                <div className="mt-4 text-3xl font-black">{tier.price}</div>
-                <div className={`mt-2 text-sm ${tier.highlight ? "text-cream" : "text-slate-500"}`}>{tier.note}</div>
-                <Link
-                  href={tier.href}
-                  className={`mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest ${
-                    tier.highlight ? "bg-cream text-espresso" : "bg-espresso text-white"
-                  }`}
-                >
-                  {tier.cta} <ArrowRight size={14} />
-                </Link>
+          <div className="space-y-8">
+            <div className="bg-white rounded-[2.5rem] border border-slate-200 p-6 shadow-xl">
+              <SignedOut>
+                <SignIn
+                  appearance={{ variables: { colorPrimary: "#8B5B3F" } }}
+                  routing="hash"
+                  signUpUrl="/sign-up"
+                  forceRedirectUrl="/calculator"
+                />
+              </SignedOut>
+              <SignedIn>
+                <div className="text-center py-8">
+                  <div className="text-xl font-black">You’re signed in.</div>
+                  <p className="mt-2 text-sm text-slate-500">Continue to the calculator to save recipes.</p>
+                  <Link href="/calculator" className="btn-primary mt-6">Open Brewline</Link>
+                </div>
+              </SignedIn>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-black tracking-tight uppercase italic">Pricing</h2>
+                <span className="text-xs font-bold text-slate-500">More tiers coming soon</span>
               </div>
-            ))}
+              <div className="grid grid-cols-1 gap-4">
+                {pricing.map(tier => (
+                  <div
+                    key={tier.name}
+                    className={`rounded-[2rem] p-6 border shadow-xl ${tier.highlight ? "bg-espresso text-white border-espresso" : "bg-white border-slate-200"}`}
+                  >
+                    <div className="text-[10px] font-black uppercase tracking-[0.3em] opacity-70">{tier.name}</div>
+                    <div className="mt-3 text-2xl font-black">{tier.price}</div>
+                    <div className={`mt-2 text-sm ${tier.highlight ? "text-cream" : "text-slate-500"}`}>{tier.note}</div>
+                    <Link
+                      href={tier.href}
+                      className={`mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-black uppercase text-[10px] tracking-widest ${
+                        tier.highlight ? "bg-cream text-espresso" : "bg-espresso text-white"
+                      }`}
+                    >
+                      {tier.cta} <ArrowRight size={14} />
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 

@@ -10,7 +10,7 @@ import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
 
 export default function QualityPage() {
-  const { formatCurrency, toDisplayPrice, formatUnitPrice } = useUnits();
+  const { toDisplayPrice, formatUnitPrice, toStoragePrice, unit } = useUnits();
   
   // Data
   const sessions = useQuery(api.quality.listSessions);
@@ -23,6 +23,7 @@ export default function QualityPage() {
   const [coffeeName, setCoffeeName] = useState('');
   const [cupperName, setCupperName] = useState('');
   const [notes, setNotes] = useState('');
+  const [costPerUnit, setCostPerUnit] = useState('');
   
   // Sensory Attributes (0-10)
   const [attributes, setAttributes] = useState({
@@ -37,12 +38,6 @@ export default function QualityPage() {
     cleanCup: 10,
     sweetness: 10,
     defects: 0
-  });
-
-  const [physical, setPhysical] = useState({
-    moisture: '',
-    density: '',
-    agtron: ''
   });
 
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
@@ -95,12 +90,16 @@ export default function QualityPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      const parsedCost = parseFloat(costPerUnit);
+      const storedCost = Number.isFinite(parsedCost) ? toStoragePrice(parsedCost) : undefined;
+
       await logSession({
         coffeeName: coffeeName || undefined,
         cupperName,
         score: totalScore,
         notes,
         flavors: selectedFlavors,
+        costPerLb: storedCost,
         ...attributes
       });
       
@@ -109,8 +108,8 @@ export default function QualityPage() {
         setSuccess(false);
         setNotes('');
         setCoffeeName('');
+        setCostPerUnit('');
         setSelectedFlavors([]);
-        setPhysical({ moisture: '', density: '', agtron: '' });
         setAttributes({ aroma: 8, flavor: 8, aftertaste: 8, acidity: 8, body: 8, balance: 8, overall: 8, uniformity: 10, cleanCup: 10, sweetness: 10, defects: 0 });
       }, 2000);
     } catch (err) {
@@ -122,14 +121,17 @@ export default function QualityPage() {
 
   // Chart Data
   const fallbackCost = 12;
-  const scatterData = (sessions as any[])?.map(s => ({
-    x: toDisplayPrice(s.roastInfo?.trueCostPerLb ?? fallbackCost),
-    y: s.score,
-    z: 1,
-    name: s.coffeeName || s.roastInfo?.productName || "Unknown",
-    batch: s.roastInfo?.batchId || s.coffeeName || "?",
-    original: s
-  })) || [];
+  const scatterData = (sessions as any[])?.map(s => {
+    const costPerLb = s.costPerLb ?? fallbackCost;
+    return {
+      x: toDisplayPrice(costPerLb),
+      y: s.score,
+      z: 1,
+      name: s.coffeeName || "Unknown",
+      batch: s.coffeeName || "?",
+      original: s
+    };
+  }) || [];
 
   const costReference = toDisplayPrice(fallbackCost);
 
@@ -191,6 +193,18 @@ export default function QualityPage() {
                   placeholder="Ethiopia Gedeb"
                   value={coffeeName}
                   onChange={e => setCoffeeName(e.target.value)}
+                  className="input-field"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cost per {unit} (optional)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="12.50"
+                  value={costPerUnit}
+                  onChange={e => setCostPerUnit(e.target.value)}
                   className="input-field"
                 />
               </div>
@@ -351,7 +365,7 @@ export default function QualityPage() {
                       <div className="flex justify-between items-start mb-4">
                          <div>
                             <span className="text-[10px] font-black text-caramel uppercase tracking-widest">Selected Session</span>
-                            <h3 className="text-xl font-bold mt-1">{selectedSession.coffeeName || selectedSession.roastInfo?.productName || "Unknown"}</h3>
+                          <h3 className="text-xl font-bold mt-1">{selectedSession.coffeeName || "Unknown"}</h3>
                          </div>
                          <button onClick={() => setSelectedSession(null)} className="p-2 bg-slate-800 rounded-full hover:bg-slate-700 transition-colors"><X size={14}/></button>
                       </div>
@@ -482,7 +496,7 @@ export default function QualityPage() {
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <div className="font-black text-slate-900">
-                        {session.coffeeName || session.roastInfo?.productName || "Unknown"}
+                        {session.coffeeName || "Unknown"}
                       </div>
                       <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
                         {session.cupperName} • {new Date(session.sessionDate).toLocaleDateString()}
