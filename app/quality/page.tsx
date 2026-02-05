@@ -119,16 +119,17 @@ export default function QualityPage() {
   };
 
   // Chart Data
+  const fallbackCost = 12;
   const scatterData = (sessions as any[])?.map(s => ({
-    x: toDisplayPrice(s.roastInfo?.trueCostPerLb || 0),
+    x: toDisplayPrice(s.roastInfo?.trueCostPerLb ?? fallbackCost),
     y: s.score,
     z: 1,
-    name: s.roastInfo?.productName || "Unknown",
-    batch: s.roastInfo?.batchId || "?",
+    name: s.coffeeName || s.roastInfo?.productName || "Unknown",
+    batch: s.roastInfo?.batchId || s.coffeeName || "?",
     original: s
-  })).filter(d => d.x > 0) || [];
+  })) || [];
 
-  const costReference = toDisplayPrice(12);
+  const costReference = toDisplayPrice(fallbackCost);
 
   if (isLoading) {
     return (
@@ -331,7 +332,7 @@ export default function QualityPage() {
                       <div className="flex justify-between items-start mb-4">
                          <div>
                             <span className="text-[10px] font-black text-caramel uppercase tracking-widest">Selected Session</span>
-                            <h3 className="text-xl font-bold mt-1">{selectedSession.roastInfo?.productName}</h3>
+                            <h3 className="text-xl font-bold mt-1">{selectedSession.coffeeName || selectedSession.roastInfo?.productName || "Unknown"}</h3>
                          </div>
                          <button onClick={() => setSelectedSession(null)} className="p-2 bg-slate-800 rounded-full hover:bg-slate-700 transition-colors"><X size={14}/></button>
                       </div>

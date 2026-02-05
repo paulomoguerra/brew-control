@@ -6,11 +6,12 @@ import { BookmarkPlus, Calculator, Trash2 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { SignedIn, SignedOut } from '@clerk/nextjs';
+import { SignedIn, SignedOut, useAuth } from '@clerk/nextjs';
 import { useToast } from '../../components/ui/Toast';
 
 export default function CoffeeCalculator() {
   const { showToast } = useToast();
+  const { isLoaded, isSignedIn, getToken } = useAuth();
 
   const recipes = useQuery(api.brewRecipes.listForUser);
   const addRecipe = useMutation(api.brewRecipes.add);
@@ -53,6 +54,11 @@ export default function CoffeeCalculator() {
     const coffeeDose = calcMode === 'coffee' ? parseFloat(coffeeGrams) || 0 : brewMath.coffeeNeeded;
     const waterAmount = calcMode === 'coffee' ? brewMath.waterNeeded : parseFloat(waterVolume) || 0;
 
+    if (!isLoaded || !isSignedIn) {
+      showToast('Please sign in to save recipes.', 'warning');
+      return;
+    }
+
     if (!coffeeName.trim()) {
       showToast('Add a coffee name before saving.', 'warning');
       return;
@@ -65,6 +71,12 @@ export default function CoffeeCalculator() {
 
     setIsSaving(true);
     try {
+      const token = await getToken({ template: "convex" });
+      if (!token) {
+        showToast('Auth token missing. Please sign out and sign back in.', 'error');
+        setIsSaving(false);
+        return;
+      }
       await addRecipe({
         coffeeName: coffeeName.trim(),
         ratio: ratioNum,
@@ -79,7 +91,8 @@ export default function CoffeeCalculator() {
       showToast('Recipe saved to your account.', 'success');
     } catch (error) {
       console.error(error);
-      showToast('Could not save recipe.', 'error');
+      const message = (error as any)?.message || 'Could not save recipe.';
+      showToast(message, 'error');
     } finally {
       setIsSaving(false);
     }
