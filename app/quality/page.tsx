@@ -32,6 +32,7 @@ export default function QualityPage() {
     acidity: 8,
     body: 8,
     balance: 8,
+    overall: 8,
     uniformity: 10,
     cleanCup: 10,
     sweetness: 10,
@@ -75,7 +76,8 @@ export default function QualityPage() {
   const [selectedSession, setSelectedSession] = useState<any>(null);
 
   const isLoading = sessions === undefined;
-  const totalScore = Object.values(attributes).reduce((a, b) => a + b, 0) - (attributes.defects * 2);
+  const { defects, ...scoreFields } = attributes;
+  const totalScore = Object.values(scoreFields).reduce((a, b) => a + b, 0) - (defects * 2);
 
   const radarData = useMemo(() => {
     const source = selectedSession || attributes;
@@ -109,7 +111,7 @@ export default function QualityPage() {
         setCoffeeName('');
         setSelectedFlavors([]);
         setPhysical({ moisture: '', density: '', agtron: '' });
-        setAttributes({ aroma: 8, flavor: 8, aftertaste: 8, acidity: 8, body: 8, balance: 8, uniformity: 10, cleanCup: 10, sweetness: 10, defects: 0 });
+        setAttributes({ aroma: 8, flavor: 8, aftertaste: 8, acidity: 8, body: 8, balance: 8, overall: 8, uniformity: 10, cleanCup: 10, sweetness: 10, defects: 0 });
       }, 2000);
     } catch (err) {
       console.error("Error logging session:", err);
@@ -196,6 +198,23 @@ export default function QualityPage() {
               {/* Attributes Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 py-2">
                  {['aroma', 'flavor', 'aftertaste', 'acidity', 'body', 'balance'].map((attr) => (
+                   <div key={attr} className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">{attr}</label>
+                        <span className="text-[10px] font-black bg-slate-100 px-2 py-0.5 rounded-full">{attributes[attr as keyof typeof attributes]}</span>
+                      </div>
+                      <input 
+                        type="range" min="6" max="10" step="0.25"
+                        value={attributes[attr as keyof typeof attributes]}
+                        onChange={e => setAttributes({...attributes, [attr]: parseFloat(e.target.value)})}
+                        className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-caramel"
+                      />
+                   </div>
+                 ))}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                 {['overall', 'uniformity', 'cleanCup', 'sweetness'].map((attr) => (
                    <div key={attr} className="space-y-2">
                       <div className="flex justify-between items-center">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">{attr}</label>
@@ -442,6 +461,42 @@ export default function QualityPage() {
                     <p className="font-bold text-slate-500 text-sm">Log cupping scores to visualize value.</p>
                  </div>
                )}
+            </div>
+          </div>
+
+          {/* History Card */}
+          <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-black text-slate-800 tracking-tight">Logged Scores</h3>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{sessions?.length || 0} Total</span>
+            </div>
+            <div className="space-y-3 max-h-[320px] overflow-y-auto custom-scrollbar pr-2">
+              {sessions && sessions.length > 0 ? sessions.map((session: any) => (
+                <button
+                  key={session._id}
+                  onClick={() => setSelectedSession(session)}
+                  className={`w-full text-left p-4 rounded-2xl border transition-all ${
+                    selectedSession?._id === session._id ? 'border-caramel bg-cream' : 'border-slate-100 hover:border-oat'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <div className="font-black text-slate-900">
+                        {session.coffeeName || session.roastInfo?.productName || "Unknown"}
+                      </div>
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                        {session.cupperName} • {new Date(session.sessionDate).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xl font-black text-slate-900">{session.score.toFixed(1)}</div>
+                      <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Score</div>
+                    </div>
+                  </div>
+                </button>
+              )) : (
+                <div className="text-sm text-slate-500 font-medium">No scores logged yet.</div>
+              )}
             </div>
           </div>
         </div>

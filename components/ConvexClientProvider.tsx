@@ -1,8 +1,7 @@
 "use client";
 
-import { ReactNode } from "react";
-import { ConvexReactClient } from "convex/react";
-import { ConvexProviderWithClerk } from "convex/react-clerk";
+import { ReactNode, useCallback, useMemo } from "react";
+import { ConvexProviderWithAuth, ConvexReactClient } from "convex/react";
 import { useAuth } from "@clerk/nextjs";
 
 // HARDCODED FIX: Ensure we always connect to the active production backend
@@ -16,9 +15,31 @@ if (!process.env.NEXT_PUBLIC_CONVEX_URL) {
 }
 
 export default function ConvexClientProvider({ children }: { children: ReactNode }) {
+  const { isLoaded, isSignedIn, getToken } = useAuth();
+
+  const fetchAccessToken = useCallback(
+    async () => {
+      try {
+        return await getToken({ template: "convex" });
+      } catch {
+        return null;
+      }
+    },
+    [getToken]
+  );
+
+  const useConvexAuth = useMemo(
+    () => () => ({
+      isLoading: !isLoaded,
+      isAuthenticated: !!isSignedIn,
+      fetchAccessToken,
+    }),
+    [isLoaded, isSignedIn, fetchAccessToken]
+  );
+
   return (
-    <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+    <ConvexProviderWithAuth client={convex} useAuth={useConvexAuth}>
       {children}
-    </ConvexProviderWithClerk>
+    </ConvexProviderWithAuth>
   );
 }

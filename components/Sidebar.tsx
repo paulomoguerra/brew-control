@@ -82,7 +82,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           <div className="bg-caramel p-2 rounded-lg text-espresso">
             <Coffee size={24} />
           </div>
-          <span className="text-xl font-bold tracking-tight">Brew Control</span>
+          <span className="text-xl font-bold tracking-tight">Brewline</span>
         </Link>
         <button 
           onClick={onClose}

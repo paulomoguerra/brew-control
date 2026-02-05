@@ -154,6 +154,7 @@ export default defineSchema({
     acidity: v.number(),
     body: v.number(),
     balance: v.number(),
+    overall: v.optional(v.number()),
     uniformity: v.number(),
     cleanCup: v.number(),
     sweetness: v.number(),

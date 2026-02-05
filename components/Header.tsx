@@ -17,7 +17,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
   const getTitle = (path: string) => {
     if (path === "/" || path === "/calculator") return "Universal Calculator";
     if (path === "/quality") return "Sensory Lab";
-    return "Brew Control";
+    return "Brewline";
   };
 
   return (

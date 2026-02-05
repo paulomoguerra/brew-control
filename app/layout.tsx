@@ -7,7 +7,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Brew Control | Universal Coffee Calculator",
+  title: "Brewline | Universal Coffee Calculator",
   description: "A phone-first universal calculator with brewing science and sensory lab.",
 };
 
