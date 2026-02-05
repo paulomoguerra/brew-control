@@ -36,7 +36,7 @@ const pricing = [
     price: "TBD",
     note: "Advanced analytics + marketplace tools",
     cta: "Join Waitlist",
-    href: "/auth",
+    href: "/sign-up",
     highlight: true,
   },
 ];
@@ -54,7 +54,7 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-3">
             <SignedOut>
-              <Link href="/auth" className="btn-secondary">Sign In</Link>
+              <Link href="/sign-in" className="btn-secondary">Sign In</Link>
               <Link href="/sign-up" className="btn-primary">Create Account</Link>
             </SignedOut>
             <SignedIn>

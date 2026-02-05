@@ -3,7 +3,16 @@ import { mutation, query } from "./_generated/server";
 
 export const listSessions = query({
   handler: async (ctx) => {
-    return await ctx.db.query("cuppingSessions").order("desc").collect();
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return [];
+    }
+
+    return await ctx.db
+      .query("cuppingSessions")
+      .withIndex("by_user_date", (q) => q.eq("userId", identity.tokenIdentifier))
+      .order("desc")
+      .collect();
   },
 });
 
@@ -28,8 +37,14 @@ export const logSession = mutation({
     costPerLb: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthorized");
+    }
+
     await ctx.db.insert("cuppingSessions", {
       ...args,
+      userId: identity.tokenIdentifier,
       sessionDate: Date.now(),
     });
   },
@@ -38,6 +53,16 @@ export const logSession = mutation({
 export const deleteSession = mutation({
   args: { id: v.id("cuppingSessions") },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthorized");
+    }
+
+    const session = await ctx.db.get(args.id);
+    if (!session || session.userId !== identity.tokenIdentifier) {
+      throw new Error("Not found");
+    }
+
     await ctx.db.delete(args.id);
   },
 });

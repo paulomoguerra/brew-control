@@ -1,16 +1,21 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../convex/_generated/api";
+import { api } from "@/convex/_generated/api";
 import { Award, Loader2, CheckCircle2, TrendingUp, Star, Microscope, X, Search } from 'lucide-react';
-import { useUnits } from '../../lib/units';
+import { useUnits } from '@/lib/units';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis, ReferenceLine, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
-import { Card } from '../../components/ui/Card';
-import { Skeleton } from '../../components/ui/Skeleton';
+import { Card } from '@/components/ui/Card';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { SignedOut, useAuth } from '@clerk/nextjs';
+import { useToast } from '@/components/ui/Toast';
 
 export default function QualityPage() {
   const { toDisplayPrice, formatUnitPrice, toStoragePrice, unit } = useUnits();
+  const { showToast } = useToast();
+  const { isLoaded, isSignedIn } = useAuth();
   
   // Data
   const sessions = useQuery(api.quality.listSessions);
@@ -71,6 +76,7 @@ export default function QualityPage() {
   const [selectedSession, setSelectedSession] = useState<any>(null);
 
   const isLoading = sessions === undefined;
+  const isSubmitDisabled = isSubmitting || !isSignedIn;
   const { defects, ...scoreFields } = attributes;
   const totalScore = Object.values(scoreFields).reduce((a, b) => a + b, 0) - (defects * 2);
 
@@ -88,6 +94,10 @@ export default function QualityPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isLoaded || !isSignedIn) {
+      showToast('Please sign in to log cupping sessions.', 'warning');
+      return;
+    }
     setIsSubmitting(true);
     try {
       const parsedCost = parseFloat(costPerUnit);
@@ -114,6 +124,8 @@ export default function QualityPage() {
       }, 2000);
     } catch (err) {
       console.error("Error logging session:", err);
+      const message = (err as any)?.message || "Could not log session.";
+      showToast(message, 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -318,9 +330,18 @@ export default function QualityPage() {
               </div>
             </div>
 
+            <SignedOut>
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold uppercase tracking-widest text-amber-700 flex items-center justify-between gap-3">
+                <span>Sign in to save cupping sessions.</span>
+                <Link href="/sign-in" className="px-3 py-1.5 rounded-lg bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest">
+                  Sign In
+                </Link>
+              </div>
+            </SignedOut>
+
             <button 
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitDisabled}
               className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] ${
                 success 
                 ? 'bg-green-500 text-white' 

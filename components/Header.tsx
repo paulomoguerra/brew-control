@@ -90,7 +90,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
         <div className="flex items-center gap-3 pl-2">
           <SignedOut>
             <Link
-              href="/auth"
+              href="/sign-in"
               className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all"
             >
               Sign In

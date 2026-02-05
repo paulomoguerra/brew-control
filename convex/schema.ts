@@ -14,6 +14,7 @@ export default defineSchema({
   }).index("by_user_created", ["userId", "createdAt"]),
 
   cuppingSessions: defineTable({
+    userId: v.string(),
     coffeeName: v.optional(v.string()),
     cupperName: v.string(),
     sessionDate: v.number(),
@@ -32,5 +33,5 @@ export default defineSchema({
     defects: v.optional(v.number()),
     flavors: v.optional(v.array(v.string())),
     costPerLb: v.optional(v.number()),
-  }).index("by_date", ["sessionDate"]),
+  }).index("by_user_date", ["userId", "sessionDate"]),
 });

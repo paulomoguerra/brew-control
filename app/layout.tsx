@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import AppShell from "@/components/AppShell";
 import ConvexClientProvider from "@/components/ConvexClientProvider";
 import { UnitProvider } from "@/lib/units";
 import { ToastProvider } from "@/components/ui/Toast";
@@ -29,9 +28,7 @@ export default function RootLayout({
           <ConvexClientProvider>
             <UnitProvider>
               <ToastProvider>
-                <AppShell>
-                  {children}
-                </AppShell>
+                {children}
               </ToastProvider>
             </UnitProvider>
           </ConvexClientProvider>

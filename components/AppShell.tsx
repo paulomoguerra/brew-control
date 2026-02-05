@@ -1,20 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { usePathname } from "next/navigation";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import MobileNav from "./MobileNav";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const isLanding = pathname === "/";
-  const isAuthRoute = pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up") || pathname.startsWith("/auth");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  if (isLanding || isAuthRoute) {
-    return <div className="min-h-screen bg-cream">{children}</div>;
-  }
 
   return (
     <div className="flex min-h-screen bg-cream">

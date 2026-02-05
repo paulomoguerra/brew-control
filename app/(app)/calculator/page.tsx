@@ -3,11 +3,12 @@
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { BookmarkPlus, Calculator, Trash2 } from 'lucide-react';
-import { Card } from '../../components/ui/Card';
+import { Card } from '@/components/ui/Card';
 import { useMutation, useQuery } from 'convex/react';
-import { api } from '../../convex/_generated/api';
+import { api } from '@/convex/_generated/api';
 import { SignedIn, SignedOut, useAuth } from '@clerk/nextjs';
-import { useToast } from '../../components/ui/Toast';
+import { useToast } from '@/components/ui/Toast';
+import { CLERK_JWT_TEMPLATE } from '@/lib/auth';
 
 export default function CoffeeCalculator() {
   const { showToast } = useToast();
@@ -71,7 +72,7 @@ export default function CoffeeCalculator() {
 
     setIsSaving(true);
     try {
-      const token = await getToken({ template: "convex" });
+      const token = await getToken({ template: CLERK_JWT_TEMPLATE });
       if (!token) {
         showToast('Auth token missing. Please sign out and sign back in.', 'error');
         setIsSaving(false);
@@ -215,7 +216,7 @@ export default function CoffeeCalculator() {
                     Sign in to save and sync recipes across devices.
                   </div>
                   <div className="flex gap-3">
-                    <Link href="/auth" className="flex-1 btn-secondary">Sign In</Link>
+                    <Link href="/sign-in" className="flex-1 btn-secondary">Sign In</Link>
                     <Link href="/sign-up" className="flex-1 btn-primary">Create Account</Link>
                   </div>
                 </SignedOut>
