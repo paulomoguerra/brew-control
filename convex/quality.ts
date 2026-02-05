@@ -20,6 +20,7 @@ export const listSessions = query({
 export const logSession = mutation({
   args: {
     roastLogId: v.optional(v.id("roastLogs")),
+    coffeeName: v.optional(v.string()),
     cupperName: v.string(),
     score: v.number(),
     notes: v.optional(v.string()),

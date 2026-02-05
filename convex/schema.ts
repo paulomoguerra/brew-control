@@ -142,6 +142,7 @@ export default defineSchema({
   // 10. Quality Control (Cupping Sessions)
   cuppingSessions: defineTable({
     roastLogId: v.optional(v.id("roastLogs")),
+    coffeeName: v.optional(v.string()),
     cupperName: v.string(),
     sessionDate: v.number(),
     score: v.number(), // Total Score (0-100)

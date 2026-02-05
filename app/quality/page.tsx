@@ -13,7 +13,6 @@ export default function QualityPage() {
   const { formatCurrency, toDisplayPrice, formatUnitPrice } = useUnits();
   
   // Data
-  const recentRoasts = useQuery(api.roasts.listLogs);
   const sessions = useQuery(api.quality.listSessions);
   const logSession = useMutation(api.quality.logSession);
 
@@ -21,7 +20,7 @@ export default function QualityPage() {
   const [success, setSuccess] = useState(false);
 
   // Form State
-  const [selectedRoastId, setSelectedRoastId] = useState('');
+  const [coffeeName, setCoffeeName] = useState('');
   const [cupperName, setCupperName] = useState('');
   const [notes, setNotes] = useState('');
   
@@ -75,7 +74,7 @@ export default function QualityPage() {
 
   const [selectedSession, setSelectedSession] = useState<any>(null);
 
-  const isLoading = recentRoasts === undefined || sessions === undefined;
+  const isLoading = sessions === undefined;
   const totalScore = Object.values(attributes).reduce((a, b) => a + b, 0) - (attributes.defects * 2);
 
   const radarData = useMemo(() => {
@@ -92,12 +91,10 @@ export default function QualityPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedRoastId) return;
-
     setIsSubmitting(true);
     try {
       await logSession({
-        roastLogId: selectedRoastId as any,
+        coffeeName: coffeeName || undefined,
         cupperName,
         score: totalScore,
         notes,
@@ -109,7 +106,7 @@ export default function QualityPage() {
       setTimeout(() => {
         setSuccess(false);
         setNotes('');
-        setSelectedRoastId('');
+        setCoffeeName('');
         setSelectedFlavors([]);
         setPhysical({ moisture: '', density: '', agtron: '' });
         setAttributes({ aroma: 8, flavor: 8, aftertaste: 8, acidity: 8, body: 8, balance: 8, uniformity: 10, cleanCup: 10, sweetness: 10, defects: 0 });
@@ -186,20 +183,13 @@ export default function QualityPage() {
               </div>
               
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Roast Batch</label>
-                <select 
-                  required
-                  value={selectedRoastId}
-                  onChange={e => setSelectedRoastId(e.target.value)}
-                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-caramel/20 transition-all appearance-none text-sm"
-                >
-                  <option value="">-- Choose Batch --</option>
-                  {recentRoasts?.map(r => (
-                    <option key={r._id} value={r._id}>
-                      {r.productName} ({new Date(r.roastDate).toLocaleDateString()})
-                    </option>
-                  ))}
-                </select>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Coffee Name</label>
+                <input 
+                  placeholder="Ethiopia Gedeb"
+                  value={coffeeName}
+                  onChange={e => setCoffeeName(e.target.value)}
+                  className="input-field"
+                />
               </div>
 
               {/* Attributes Grid */}
@@ -296,7 +286,7 @@ export default function QualityPage() {
 
             <button 
               type="submit"
-              disabled={isSubmitting || !selectedRoastId}
+              disabled={isSubmitting}
               className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] ${
                 success 
                 ? 'bg-green-500 text-white' 
