@@ -10,7 +10,7 @@ import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
 
 export default function QualityPage() {
-  const { formatCurrency } = useUnits();
+  const { formatCurrency, toDisplayPrice, formatUnitPrice } = useUnits();
   
   // Data
   const recentRoasts = useQuery(api.roasts.listLogs);
@@ -123,13 +123,15 @@ export default function QualityPage() {
 
   // Chart Data
   const scatterData = (sessions as any[])?.map(s => ({
-    x: s.roastInfo?.trueCostPerLb || 0,
+    x: toDisplayPrice(s.roastInfo?.trueCostPerLb || 0),
     y: s.score,
     z: 1,
     name: s.roastInfo?.productName || "Unknown",
     batch: s.roastInfo?.batchId || "?",
     original: s
   })).filter(d => d.x > 0) || [];
+
+  const costReference = toDisplayPrice(12);
 
   if (isLoading) {
     return (
@@ -165,7 +167,7 @@ export default function QualityPage() {
              </div>
              
              <div className="flex items-center gap-3 mb-2">
-              <div className="bg-amber-100 p-2 rounded-xl text-amber-600">
+              <div className="bg-cream p-2 rounded-xl text-cocoa">
                 <Star size={24} />
               </div>
               <h2 className="text-xl font-black text-slate-900">New Session</h2>
@@ -189,7 +191,7 @@ export default function QualityPage() {
                   required
                   value={selectedRoastId}
                   onChange={e => setSelectedRoastId(e.target.value)}
-                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-amber-500/10 transition-all appearance-none text-sm"
+                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-caramel/20 transition-all appearance-none text-sm"
                 >
                   <option value="">-- Choose Batch --</option>
                   {recentRoasts?.map(r => (
@@ -212,7 +214,7 @@ export default function QualityPage() {
                         type="range" min="6" max="10" step="0.25"
                         value={attributes[attr as keyof typeof attributes]}
                         onChange={e => setAttributes({...attributes, [attr]: parseFloat(e.target.value)})}
-                        className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                        className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-caramel"
                       />
                    </div>
                  ))}
@@ -222,7 +224,7 @@ export default function QualityPage() {
               <div className="space-y-4">
                 <div className="flex justify-between items-end">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Flavor Notes</label>
-                  <span className="text-[10px] font-black text-amber-500 uppercase">{selectedFlavors.length} Selected</span>
+                  <span className="text-[10px] font-black text-caramel uppercase">{selectedFlavors.length} Selected</span>
                 </div>
                 
                 <div className="relative">
@@ -257,7 +259,7 @@ export default function QualityPage() {
                               className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all border ${
                                 selectedFlavors.includes(flavor)
                                 ? 'bg-slate-900 text-white border-slate-900 shadow-md'
-                                : 'bg-white text-slate-600 border-slate-200 hover:border-amber-500'
+                                : 'bg-white text-slate-600 border-slate-200 hover:border-caramel'
                               }`}
                             >
                               {flavor}
@@ -272,10 +274,10 @@ export default function QualityPage() {
 
               <div className="p-4 md:p-5 bg-slate-900 text-white rounded-2xl flex justify-between items-center shadow-lg">
                  <div className="flex flex-col">
-                   <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Total SCA Score</span>
+                   <span className="text-[10px] font-black text-caramel uppercase tracking-widest">Total SCA Score</span>
                    <span className="text-sm font-medium text-slate-400">Standard Calibration</span>
                  </div>
-                 <span className={`text-3xl md:text-4xl font-black ${totalScore >= 85 ? 'text-green-400' : totalScore >= 80 ? 'text-amber-400' : 'text-red-400'}`}>
+                 <span className={`text-3xl md:text-4xl font-black ${totalScore >= 85 ? 'text-green-400' : totalScore >= 80 ? 'text-caramel' : 'text-red-400'}`}>
                     {totalScore.toFixed(2)}
                  </span>
               </div>
@@ -287,7 +289,7 @@ export default function QualityPage() {
                   onChange={e => setNotes(e.target.value)}
                   rows={2}
                   placeholder="e.g. Juicy acidity, stone fruit notes..."
-                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-medium text-sm outline-none focus:ring-4 focus:ring-amber-500/10 transition-all resize-none"
+                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-medium text-sm outline-none focus:ring-4 focus:ring-caramel/20 transition-all resize-none"
                 />
               </div>
             </div>
@@ -338,7 +340,7 @@ export default function QualityPage() {
                    <div className="relative z-10">
                       <div className="flex justify-between items-start mb-4">
                          <div>
-                            <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Selected Session</span>
+                            <span className="text-[10px] font-black text-caramel uppercase tracking-widest">Selected Session</span>
                             <h3 className="text-xl font-bold mt-1">{selectedSession.roastInfo?.productName}</h3>
                          </div>
                          <button onClick={() => setSelectedSession(null)} className="p-2 bg-slate-800 rounded-full hover:bg-slate-700 transition-colors"><X size={14}/></button>
@@ -411,8 +413,8 @@ export default function QualityPage() {
                             <div className="bg-slate-900 text-white p-3 rounded-xl shadow-xl border border-slate-700">
                               <p className="font-bold text-xs mb-1">{data.name}</p>
                               <div className="flex justify-between gap-4 text-[10px] font-black uppercase">
-                                <span className="text-amber-400">Score: {data.y}</span>
-                                <span className="text-green-400">Cost: {formatCurrency(data.x)}</span>
+                                <span className="text-caramel">Score: {data.y}</span>
+                                <span className="text-green-400">Cost: {formatUnitPrice(data.x)}</span>
                               </div>
                             </div>
                           );
@@ -421,7 +423,7 @@ export default function QualityPage() {
                       }}
                     />
                     
-                    <ReferenceLine x={12} stroke="#e2e8f0" strokeWidth={2} />
+                    <ReferenceLine x={costReference} stroke="#e2e8f0" strokeWidth={2} />
                     <ReferenceLine y={84} stroke="#e2e8f0" strokeWidth={2} />
 
                     <Scatter 

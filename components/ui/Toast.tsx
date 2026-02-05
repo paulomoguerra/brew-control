@@ -49,12 +49,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               animate-in slide-in-from-top-2 duration-300
               ${toast.type === 'success' ? 'bg-green-50/95 border-green-500 text-green-900' : ''}
               ${toast.type === 'error' ? 'bg-red-50/95 border-red-500 text-red-900' : ''}
-              ${toast.type === 'warning' ? 'bg-amber-50/95 border-amber-500 text-amber-900' : ''}
+              ${toast.type === 'warning' ? 'bg-cream/95 border-caramel text-espresso' : ''}
             `}
           >
             {toast.type === 'success' && <CheckCircle2 size={20} className="text-green-600 flex-shrink-0" />}
             {toast.type === 'error' && <XCircle size={20} className="text-red-600 flex-shrink-0" />}
-            {toast.type === 'warning' && <AlertCircle size={20} className="text-amber-600 flex-shrink-0" />}
+            {toast.type === 'warning' && <AlertCircle size={20} className="text-cocoa flex-shrink-0" />}
             
             <span className="font-bold text-sm flex-1">{toast.message}</span>
             

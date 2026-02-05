@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Coffee, LayoutDashboard, Database, Flame, Award, BookOpen, Settings, Store, Package, X, Calculator, Book, Users, GripVertical, Lock, Unlock } from "lucide-react";
-import { useUnits } from "../lib/units";
+import { Coffee, Calculator, Microscope, X, GripVertical, Lock, Unlock } from "lucide-react";
 import { 
   DndContext, 
   closestCenter, 
@@ -28,41 +27,14 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const pathname = usePathname();
-  const { t } = useUnits();
   const [isCustomizeMode, setIsCustomizeMode] = useState(false);
   const getSections = () => [
     {
-      id: "command",
-      title: t('common.overview'),
+      id: "main",
+      title: "Main",
       items: [
-        { id: "dash", href: "/dashboard", label: t('common.dashboard'), icon: <LayoutDashboard size={20} /> },
-        { id: "clients", href: "/clients", label: t('common.clients'), icon: <Users size={20} /> },
-      ]
-    },
-    {
-      id: "revenue",
-      title: t('common.production'),
-      items: [
-        { id: "sales", href: "/sales", label: t('common.sales'), icon: <Package size={20} /> },
-        { id: "cafe", href: "/cafe", label: t('common.cafe'), icon: <Store size={20} /> },
-      ]
-    },
-    {
-      id: "roastery",
-      title: t('common.roast'),
-      items: [
-        { id: "prod", href: "/roast", label: t('roast.title'), icon: <Flame size={20} /> },
-        { id: "green", href: "/inventory", label: t('common.inventory'), icon: <Database size={20} /> },
-        { id: "roasted", href: "/inventory/roasted", label: t('roast.roasted_stock'), icon: <Package size={20} /> },
-      ]
-    },
-    {
-      id: "lab",
-      title: t('common.quality'),
-      items: [
-        { id: "sensory", href: "/quality", label: t('quality.title'), icon: <Award size={20} /> },
-        { id: "brew", href: "/recipes", label: t('common.recipes'), icon: <Book size={20} /> },
-        { id: "tools", href: "/calculator", label: t('calculator.title'), icon: <Calculator size={20} /> },
+        { id: "tools", href: "/calculator", label: "Universal Calculator", icon: <Calculator size={20} /> },
+        { id: "sensory", href: "/quality", label: "Sensory Lab", icon: <Microscope size={20} /> },
       ]
     },
   ];
@@ -70,12 +42,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [sections, setSections] = useState(getSections());
 
   useEffect(() => {
-    // Update sections when language changes
     setSections(getSections());
-  }, [t]);
+  }, []);
 
   useEffect(() => {
-    const saved = localStorage.getItem('roasteros-sidebar-layout');
+    const saved = localStorage.getItem('brewcontrol-sidebar-layout');
     if (saved) {
       // Logic to merge icons back would go here in a real production app
       // For now we'll stick to default layout for the icon components but allow reordering
@@ -91,7 +62,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       const newIndex = sections.findIndex(s => s.id === over.id);
       const newSections = arrayMove(sections, oldIndex, newIndex);
       setSections(newSections);
-      localStorage.setItem('roasteros-sidebar-layout', JSON.stringify(newSections.map(s => s.id)));
+      localStorage.setItem('brewcontrol-sidebar-layout', JSON.stringify(newSections.map(s => s.id)));
     }
   };
 
@@ -108,10 +79,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           onClick={onClose}
           className="p-6 flex items-center gap-3 cursor-pointer hover:bg-slate-800/50 transition-colors w-full"
         >
-          <div className="bg-amber-500 p-2 rounded-lg text-slate-900">
+          <div className="bg-caramel p-2 rounded-lg text-espresso">
             <Coffee size={24} />
           </div>
-          <span className="text-xl font-bold tracking-tight">RoasterOS</span>
+          <span className="text-xl font-bold tracking-tight">Brew Control</span>
         </Link>
         <button 
           onClick={onClose}
@@ -125,7 +96,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic">Navigation</span>
          <button 
            onClick={() => setIsCustomizeMode(!isCustomizeMode)}
-           className={`p-1.5 rounded-lg transition-all ${isCustomizeMode ? 'bg-amber-500 text-slate-900' : 'text-slate-500 hover:text-white hover:bg-slate-800'}`}
+           className={`p-1.5 rounded-lg transition-all ${isCustomizeMode ? 'bg-caramel text-espresso' : 'text-slate-500 hover:text-white hover:bg-slate-800'}`}
          >
            {isCustomizeMode ? <Unlock size={14} /> : <Lock size={14} />}
          </button>
@@ -147,20 +118,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         </DndContext>
       </nav>
 
-      <div className="p-4 border-t border-slate-800 mt-auto">
-        <Link
-          href="/settings"
-          onClick={onClose}
-          className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold w-full text-left ${
-            isActive("/settings")
-              ? "bg-slate-800 text-white"
-              : "text-slate-500 hover:text-white hover:bg-slate-800"
-          }`}
-        >
-          <Settings size={20} />
-          {t('common.settings')}
-        </Link>
-      </div>
     </aside>
   );
 }
@@ -189,7 +146,7 @@ function SortableSection({ section, isActive, onClose, isCustomizeMode }: any) {
           {section.title}
         </div>
         {isCustomizeMode && (
-          <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-slate-600 hover:text-amber-500">
+          <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-slate-600 hover:text-caramel">
             <GripVertical size={14} />
           </div>
         )}
@@ -202,7 +159,7 @@ function SortableSection({ section, isActive, onClose, isCustomizeMode }: any) {
             onClick={onClose}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold w-full text-left group relative ${
               isActive(item.href)
-                ? "bg-amber-500 text-slate-900 shadow-lg shadow-amber-500/20"
+                ? "bg-caramel text-espresso shadow-lg shadow-caramel/20"
                 : "text-slate-400 hover:bg-slate-800 hover:text-white"
             }`}
           >

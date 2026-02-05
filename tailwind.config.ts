@@ -11,6 +11,14 @@ const config: Config = {
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
       },
+      colors: {
+        espresso: "#4B2C20",
+        mocha: "#6E4F3E",
+        cocoa: "#8B5B3F",
+        caramel: "#D8A078",
+        oat: "#BFA78A",
+        cream: "#F9F1E4",
+      },
     },
   },
   plugins: [],

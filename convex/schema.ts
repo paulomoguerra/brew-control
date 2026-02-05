@@ -127,6 +127,18 @@ export default defineSchema({
     })),
   }),
 
+  // 9b. Brew Recipes (Universal Calculator)
+  brewRecipes: defineTable({
+    userId: v.string(),
+    coffeeName: v.string(),
+    ratio: v.number(),
+    coffeeDose: v.number(),
+    waterAmount: v.number(),
+    mode: v.union(v.literal("coffee"), v.literal("water")),
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("by_user_created", ["userId", "createdAt"]),
+
   // 10. Quality Control (Cupping Sessions)
   cuppingSessions: defineTable({
     roastLogId: v.optional(v.id("roastLogs")),

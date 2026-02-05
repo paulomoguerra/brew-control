@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, Search, Scale, DollarSign, Menu, Languages } from "lucide-react";
+import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { useUnits } from "../lib/units";
 
 interface HeaderProps {
@@ -13,9 +15,9 @@ export default function Header({ onMenuClick }: HeaderProps) {
   const { unit, toggleUnit, currency, toggleCurrency, language, setLanguage } = useUnits();
 
   const getTitle = (path: string) => {
-    if (path === "/" || path === "/dashboard") return "Dashboard";
-    const segment = path.split("/")[1];
-    return segment ? segment.charAt(0).toUpperCase() + segment.slice(1).replace("-", " ") : "RoasterOS";
+    if (path === "/" || path === "/calculator") return "Universal Calculator";
+    if (path === "/quality") return "Sensory Lab";
+    return "Brew Control";
   };
 
   return (
@@ -71,10 +73,10 @@ export default function Header({ onMenuClick }: HeaderProps) {
         </button>
 
         <div className="relative hidden xl:block group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-amber-500 transition-colors" size={16} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-caramel transition-colors" size={16} />
           <input 
             placeholder="Search..." 
-            className="pl-10 pr-4 py-2 bg-slate-50 border border-transparent hover:border-slate-200 focus:border-amber-500 rounded-xl text-sm outline-none transition-all w-48 font-medium"
+            className="pl-10 pr-4 py-2 bg-slate-50 border border-transparent hover:border-slate-200 focus:border-caramel rounded-xl text-sm outline-none transition-all w-48 font-medium"
           />
         </div>
 
@@ -86,13 +88,17 @@ export default function Header({ onMenuClick }: HeaderProps) {
         <div className="h-8 w-px bg-slate-100 mx-2 hidden lg:block"></div>
 
         <div className="flex items-center gap-3 pl-2">
-          <div className="text-right hidden xl:block">
-            <div className="text-sm font-bold text-slate-900 leading-none">Head Roaster</div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Admin Access</div>
-          </div>
-          <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-slate-900 border-2 border-white shadow-lg flex items-center justify-center text-white font-black text-[10px] md:text-xs tracking-wider">
-            HR
-          </div>
+          <SignedOut>
+            <Link
+              href="/sign-in"
+              className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all"
+            >
+              Sign In
+            </Link>
+          </SignedOut>
+          <SignedIn>
+            <UserButton appearance={{ elements: { avatarBox: "w-9 h-9 rounded-xl" } }} />
+          </SignedIn>
         </div>
       </div>
     </header>

@@ -33,7 +33,7 @@ export function StatCard({ label, value, icon, trend, alert, onClick }: any) {
       onClick={onClick}
       className={`bg-white p-8 rounded-[3rem] border ${alert ? 'border-red-200 bg-red-50' : 'border-slate-200'} shadow-sm transition-all hover:shadow-xl flex flex-col items-center text-center h-full group ${onClick ? 'cursor-pointer active:scale-95' : ''}`}
     >
-      <div className={`w-14 h-14 md:w-16 md:h-16 flex items-center justify-center rounded-[1.25rem] border mb-6 ${alert ? 'bg-white border-red-100' : 'bg-slate-50 border-slate-100'} ${onClick ? 'group-hover:bg-amber-50 group-hover:border-amber-100 transition-colors' : ''}`}>
+      <div className={`w-14 h-14 md:w-16 md:h-16 flex items-center justify-center rounded-[1.25rem] border mb-6 ${alert ? 'bg-white border-red-100' : 'bg-slate-50 border-slate-100'} ${onClick ? 'group-hover:bg-cream group-hover:border-caramel/30 transition-colors' : ''}`}>
         {icon}
       </div>
       

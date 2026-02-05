@@ -3,11 +3,12 @@ import AppShell from "@/components/AppShell";
 import ConvexClientProvider from "@/components/ConvexClientProvider";
 import { UnitProvider } from "@/lib/units";
 import { ToastProvider } from "@/components/ui/Toast";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "RoasterOS | Finance-First ERP",
-  description: "Manage green inventory, roasting, and unit economics.",
+  title: "Brew Control | Universal Coffee Calculator",
+  description: "A phone-first universal calculator with brewing science and sensory lab.",
 };
 
 export default function RootLayout({
@@ -17,16 +18,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="font-sans bg-slate-50 text-slate-900 antialiased selection:bg-amber-100 selection:text-amber-900">
-        <ConvexClientProvider>
-          <UnitProvider>
-            <ToastProvider>
-              <AppShell>
-                {children}
-              </AppShell>
-            </ToastProvider>
-          </UnitProvider>
-        </ConvexClientProvider>
+      <body className="font-sans bg-cream text-slate-900 antialiased selection:bg-cream selection:text-espresso">
+        <ClerkProvider appearance={{ variables: { colorPrimary: "#8B5B3F" } }}>
+          <ConvexClientProvider>
+            <UnitProvider>
+              <ToastProvider>
+                <AppShell>
+                  {children}
+                </AppShell>
+              </ToastProvider>
+            </UnitProvider>
+          </ConvexClientProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

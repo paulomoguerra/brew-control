@@ -9,14 +9,15 @@ import MobileNav from "./MobileNav";
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLanding = pathname === "/";
+  const isAuthRoute = pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  if (isLanding) {
-    return <div className="min-h-screen bg-slate-50">{children}</div>;
+  if (isLanding || isAuthRoute) {
+    return <div className="min-h-screen bg-cream">{children}</div>;
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-cream">
       {/* Sidebar - Handles its own mobile visibility via props */}
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       

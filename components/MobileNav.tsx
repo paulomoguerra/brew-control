@@ -3,17 +3,15 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Store, Package, Plus, Calculator } from 'lucide-react';
+import { Calculator, Microscope } from 'lucide-react';
 
 export default function MobileNav() {
   const pathname = usePathname();
   const isActive = (href: string) => pathname === href;
 
   const navItems = [
-    { href: "/dashboard", label: "Home", icon: <LayoutDashboard size={20} /> },
-    { href: "/cafe", label: "Cafe", icon: <Store size={20} /> },
-    { href: "/sales", label: "Orders", icon: <Package size={20} /> },
-    { href: "/calculator", label: "Tools", icon: <Calculator size={20} /> },
+    { href: "/calculator", label: "Calculator", icon: <Calculator size={20} /> },
+    { href: "/quality", label: "Sensory Lab", icon: <Microscope size={20} /> },
   ];
 
   return (
@@ -25,11 +23,11 @@ export default function MobileNav() {
             href={item.href}
             className={`flex flex-col items-center gap-1 transition-all ${
               isActive(item.href) 
-                ? "text-amber-600 scale-110" 
+                ? "text-cocoa scale-110" 
                 : "text-slate-400"
             }`}
           >
-            <div className={`p-1.5 rounded-xl ${isActive(item.href) ? "bg-amber-50" : ""}`}>
+            <div className={`p-1.5 rounded-xl ${isActive(item.href) ? "bg-cream" : ""}`}>
               {item.icon}
             </div>
             <span className="text-[9px] font-black uppercase tracking-tighter">{item.label}</span>

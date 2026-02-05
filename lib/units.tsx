@@ -26,6 +26,8 @@ interface ConfigContextType {
   toDisplayPrice: (pricePerLb: number) => number;
   formatPrice: (pricePerLb: number) => string;
   formatCurrency: (value: number) => string;
+  toStoragePrice: (pricePerUnit: number) => number;
+  formatUnitPrice: (pricePerUnit: number) => string;
   label: string;
 }
 
@@ -46,10 +48,10 @@ export function UnitProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('light');
 
   useEffect(() => {
-    const savedUnit = localStorage.getItem('roasteros-unit') as Unit || 'kg';
-    const savedCurrency = localStorage.getItem('roasteros-currency') as Currency || 'BRL';
-    const savedLanguage = localStorage.getItem('roasteros-language') as Language || 'en';
-    const savedTheme = localStorage.getItem('roasteros-theme') as Theme || 'light';
+    const savedUnit = localStorage.getItem('brewcontrol-unit') as Unit || 'kg';
+    const savedCurrency = localStorage.getItem('brewcontrol-currency') as Currency || 'BRL';
+    const savedLanguage = localStorage.getItem('brewcontrol-language') as Language || 'en';
+    const savedTheme = localStorage.getItem('brewcontrol-theme') as Theme || 'light';
     
     setUnitState(savedUnit);
     setCurrencyState(savedCurrency);
@@ -65,22 +67,22 @@ export function UnitProvider({ children }: { children: React.ReactNode }) {
 
   const setUnit = (u: Unit) => {
     setUnitState(u);
-    localStorage.setItem('roasteros-unit', u);
+    localStorage.setItem('brewcontrol-unit', u);
   };
 
   const setCurrency = (c: Currency) => {
     setCurrencyState(c);
-    localStorage.setItem('roasteros-currency', c);
+    localStorage.setItem('brewcontrol-currency', c);
   };
 
   const setLanguage = (l: Language) => {
     setLanguageState(l);
-    localStorage.setItem('roasteros-language', l);
+    localStorage.setItem('brewcontrol-language', l);
   };
 
   const setTheme = (t: Theme) => {
     setThemeState(t);
-    localStorage.setItem('roasteros-theme', t);
+    localStorage.setItem('brewcontrol-theme', t);
     if (t === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
@@ -124,6 +126,10 @@ export function UnitProvider({ children }: { children: React.ReactNode }) {
     return unit === 'lbs' ? pricePerLb : pricePerLb * KG_TO_LBS;
   };
 
+  const toStoragePrice = (pricePerUnit: number) => {
+    return unit === 'lbs' ? pricePerUnit : pricePerUnit / KG_TO_LBS;
+  };
+
   const formatCurrency = (value: number) => {
     const locale = currency === 'BRL' ? 'pt-BR' : 'en-US';
     return new Intl.NumberFormat(locale, {
@@ -140,6 +146,10 @@ export function UnitProvider({ children }: { children: React.ReactNode }) {
   const formatPrice = (pricePerLb: number) => {
     const val = toDisplayPrice(pricePerLb);
     return formatCurrency(val) + `/${unit}`;
+  };
+
+  const formatUnitPrice = (pricePerUnit: number) => {
+    return formatCurrency(pricePerUnit) + `/${unit}`;
   };
 
   return (
@@ -161,6 +171,8 @@ export function UnitProvider({ children }: { children: React.ReactNode }) {
       toDisplayPrice,
       formatPrice,
       formatCurrency,
+      toStoragePrice,
+      formatUnitPrice,
       label: unit
     }}>
       {children}

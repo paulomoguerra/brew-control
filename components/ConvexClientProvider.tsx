@@ -1,7 +1,9 @@
 "use client";
 
 import { ReactNode } from "react";
-import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { ConvexReactClient } from "convex/react";
+import { ConvexProviderWithClerk } from "convex/react-clerk";
+import { useAuth } from "@clerk/nextjs";
 
 // HARDCODED FIX: Ensure we always connect to the active production backend
 // This overrides any potential environment variable mismatches on Vercel
@@ -14,5 +16,9 @@ if (!process.env.NEXT_PUBLIC_CONVEX_URL) {
 }
 
 export default function ConvexClientProvider({ children }: { children: ReactNode }) {
-  return <ConvexProvider client={convex}>{children}</ConvexProvider>;
+  return (
+    <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+      {children}
+    </ConvexProviderWithClerk>
+  );
 }
