@@ -6,8 +6,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Award, Loader2, CheckCircle2, TrendingUp, Star, Microscope, X, Search } from 'lucide-react';
 import { useUnits } from '@/lib/units';
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis, ReferenceLine, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
-import { Card } from '@/components/ui/Card';
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis, ReferenceLine, Radar, RadarChart, PolarGrid, PolarAngleAxis } from 'recharts';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { SignedOut, useAuth } from '@clerk/nextjs';
 import { useToast } from '@/components/ui/Toast';
@@ -57,15 +56,6 @@ export default function QualityPage() {
     "Roasted": ["Pipe Tobacco", "Burnt Sugar", "Smoky", "Acrid"],
     "Green/Vegetal": ["Grassy", "Pea Pod", "Hay-like", "Herbaceous"]
   };
-
-  const allFlavors = Object.entries(flavorWheel).flatMap(([cat, items]) => 
-    items.map(item => ({ category: cat, name: item }))
-  );
-
-  const filteredFlavors = allFlavors.filter(f => 
-    f.name.toLowerCase().includes(flavorSearch.toLowerCase()) ||
-    f.category.toLowerCase().includes(flavorSearch.toLowerCase())
-  );
 
   const toggleFlavor = (flavor: string) => {
     setSelectedFlavors(prev => 

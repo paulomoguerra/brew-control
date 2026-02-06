@@ -7,6 +7,7 @@ import { Coffee, Calculator, Microscope, X, GripVertical, Lock, Unlock } from "l
 import { 
   DndContext, 
   closestCenter, 
+  type DragEndEvent,
   PointerSensor, 
   useSensor, 
   useSensors 
@@ -55,15 +56,17 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const sensors = useSensors(useSensor(PointerSensor));
 
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (active.id !== over?.id) {
-      const oldIndex = sections.findIndex(s => s.id === active.id);
-      const newIndex = sections.findIndex(s => s.id === over.id);
-      const newSections = arrayMove(sections, oldIndex, newIndex);
-      setSections(newSections);
-      localStorage.setItem('brewcontrol-sidebar-layout', JSON.stringify(newSections.map(s => s.id)));
-    }
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = sections.findIndex(s => s.id === active.id);
+    const newIndex = sections.findIndex(s => s.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+
+    const newSections = arrayMove(sections, oldIndex, newIndex);
+    setSections(newSections);
+    localStorage.setItem('brewcontrol-sidebar-layout', JSON.stringify(newSections.map(s => s.id)));
   };
 
   const isActive = (href: string) => pathname === href;

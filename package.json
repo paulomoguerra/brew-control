@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint app components convex/*.ts lib middleware.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.36.9",
@@ -16,7 +16,7 @@
     "clsx": "^2.1.0",
     "convex": "^1.31.6",
     "lucide-react": "^0.563.0",
-    "next": "^16.1.4",
+    "next": "^16.1.5",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "recharts": "^2.12.0",
@@ -27,6 +27,8 @@
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "autoprefixer": "^10.4.17",
+    "eslint": "^9.39.1",
+    "eslint-config-next": "^16.1.5",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.0"
