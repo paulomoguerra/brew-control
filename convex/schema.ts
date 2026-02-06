@@ -3,7 +3,7 @@ import { v } from "convex/values";
 
 export default defineSchema({
   brewRecipes: defineTable({
-    userId: v.string(),
+    userId: v.optional(v.string()),
     coffeeName: v.string(),
     ratio: v.number(),
     coffeeDose: v.number(),
@@ -14,7 +14,7 @@ export default defineSchema({
   }).index("by_user_created", ["userId", "createdAt"]),
 
   cuppingSessions: defineTable({
-    userId: v.string(),
+    userId: v.optional(v.string()),
     coffeeName: v.optional(v.string()),
     cupperName: v.string(),
     sessionDate: v.number(),
