@@ -28,6 +28,7 @@ out/
 
 # Secrets
 Secret Keys/
+Secret Keys/keys.txt
 
 # Editor directories and files
 .vscode/*
